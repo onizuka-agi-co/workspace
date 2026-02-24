@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-02-24T05:12:54.023232+00:00",
+  "original_tweet": {
+    "id": "2026158562062614644",
+    "text": "FUTODAMA使ってautonomous AGI 実験に向けた準備❼\nGithubAppいけた！！！\n\nCloudflare Workersのセットアップから実施！！！\nほぼ自分は認証系をポチポチしているだけで完成したぞ！ https://t.co/uXquODFupZ https://t.co/oXpdDPZjk2",
+    "url": "https://x.com/i/status/2026158562062614644"
+  },
+  "community_post": {
+    "id": "2026163465296183531",
+    "text": "🔍 FUTODAMA AGI準備③\n\n• GitHub Apps連携完了\n• Cloudflare Workersセットアップ\n• 認証設定のみで自動構築\n\n💡 AGIが自律的にツールを使うためのインフラ整備中\n\nhttps://x.com/i/status/2026158562062614644",
+    "url": "https://x.com/i/status/2026163465296183531"
+  }
+}
