@@ -44,6 +44,58 @@ uv run skills/sunwood-community/scripts/quote_to_community.py https://x.com/user
 }
 ```
 
+## 🔔 投稿前のログ確認フロー
+
+**重要:** 新しい投稿をする前に、必ず過去のログを確認し、流れを理解した内容にすること。
+
+### 確認手順
+
+1. **ログディレクトリを確認**
+   ```bash
+   ls skills/sunwood-community/logs/
+   ```
+
+2. **最新のログファイルを読む**
+   ```bash
+   cat skills/sunwood-community/logs/YYYY-MM-DD/*.json
+   ```
+
+3. **シリーズものの場合**
+   - 同じ作者の連続投稿（例: FUTODAMA AGI準備①②③...）を把握
+   - 前回の内容を踏まえた解説を作成
+   - 「前回の続き」「シリーズ第N弾」など文脈を反映
+
+### Agentがやるべきこと
+
+```
+1. ユーザーからポストURLを受け取る
+2. logs/ 内の最新ログを確認（同じ作者・シリーズがあれば）
+3. 文脈を理解した解説文を作成
+4. 投稿実行
+5. ログ保存
+```
+
+### 例
+
+過去ログ:
+- ① サンドボックス環境構築
+- ② GitHub Pagesデプロイ
+- ③ GitHub Apps連携 ← 今回
+
+解説例:
+```
+🔍 FUTODAMA AGI準備シリーズ第③弾
+
+前回のGitHub Pagesデプロイに続き、今回はGitHub Apps連携を完了。
+
+🎯 これまでの流れ:
+① サンドボックス環境構築
+② GitHub Pagesデプロイ
+③ GitHub Apps連携 ← NEW
+
+💡 AGIの自律実行環境が着々と整備中
+```
+
 ## スクリプト一覧
 
 ### quote_to_community.py - 引用リツイート投稿
