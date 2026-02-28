@@ -21,6 +21,12 @@ uv run scripts/x_write.py <command> [args...]
 # ツイート投稿
 uv run scripts/x_write.py post "投稿テキスト"
 
+# 画像付きツイート
+uv run scripts/x_write.py post-image <画像パスorURL> "投稿テキスト"
+
+# 画像のみアップロード（media_id返却）
+uv run scripts/x_write.py upload <画像パスorURL>
+
 # 引用リツイート
 uv run scripts/x_write.py quote <tweet_id> "引用コメント"
 
