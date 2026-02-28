@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-03-01
+
+### 🔗 生ログ
+→ [memory/docs/2026/03/01/](memory/docs/2026/03/01/)
+
+### 概要
+- **nanobanana2 Image-to-Image モード追加** - `--image` フラグで画像編集可能に
+- **ONIZUKA アセット追加** - リアル版・ちび版キャラ画像
+- **FAL_KEY 永続化** - fal-key.txt + .bashrc
+
+### 修正・追加内容
+- ポーリングロジック修正（202ステータス対応）
+- Image-to-Image (Edit) モード実装
+- ONIZUKA キャラクターアセット追加
+
+### コミット
+```
+da3500e fix(nano-banana-2): correct polling logic
+6200ee6 feat(nano-banana-2): add ONIZUKA assets
+6ab1398 feat(nano-banana-2): add image-to-image mode
+41c8dac chore: add fal-key.txt to .gitignore
+```
+
+---
+
 ## 2026-02-28
 
 ### 🔗 生ログ
