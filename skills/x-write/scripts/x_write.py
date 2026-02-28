@@ -2,6 +2,7 @@
 """
 X API Write Client for OpenClaw
 Handles OAuth2 token management and WRITE-only API calls
+Supports media upload for image attachments
 """
 
 import json
@@ -9,6 +10,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import base64
+import mimetypes
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,6 +18,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent.parent.parent / "data" / "x"
 TOKEN_FILE = DATA_DIR / "x-tokens.json"
 CLIENT_CREDENTIALS_FILE = DATA_DIR / "x-client-credentials.json"
+
 
 class XWriteClient:
     def __init__(self):
@@ -103,9 +106,95 @@ class XWriteClient:
             error_body = e.read().decode()
             raise Exception(f"API error: {e.code} - {error_body}")
     
+    def _multipart_upload(self, url, fields, files):
+        """Upload files using multipart/form-data"""
+        import uuid
+        boundary = uuid.uuid4().hex
+        
+        token = self._ensure_valid_token()
+        
+        body_parts = []
+        
+        # Add form fields
+        for key, value in fields.items():
+            body_parts.append(f'--{boundary}'.encode())
+            body_parts.append(f'Content-Disposition: form-data; name="{key}"'.encode())
+            body_parts.append(b'')
+            body_parts.append(str(value).encode())
+        
+        # Add files
+        for key, (filename, content, content_type) in files.items():
+            body_parts.append(f'--{boundary}'.encode())
+            body_parts.append(
+                f'Content-Disposition: form-data; name="{key}"; filename="{filename}"'.encode()
+            )
+            body_parts.append(f'Content-Type: {content_type}'.encode())
+            body_parts.append(b'')
+            body_parts.append(content)
+        
+        body_parts.append(f'--{boundary}--'.encode())
+        body_parts.append(b'')
+        
+        body = b'\r\n'.join(body_parts)
+        
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': f'multipart/form-data; boundary={boundary}',
+        }
+        
+        req = urllib.request.Request(url, data=body, headers=headers, method='POST')
+        
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode()
+            raise Exception(f"Upload error: {e.code} - {error_body}")
+    
+    # === Media Upload ===
+    
+    def upload_media(self, image_path_or_url):
+        """Upload an image and return media_id"""
+        path = Path(image_path_or_url)
+        
+        # Check if it's a URL
+        if str(image_path_or_url).startswith('http://') or str(image_path_or_url).startswith('https://'):
+            # Download the image first
+            print(f"Downloading image from URL...")
+            req = urllib.request.Request(str(image_path_or_url))
+            with urllib.request.urlopen(req) as resp:
+                content = resp.read()
+            filename = str(image_path_or_url).split('/')[-1].split('?')[0]
+            content_type = resp.headers.get('Content-Type', 'image/png')
+        else:
+            # Local file
+            if not path.exists():
+                raise FileNotFoundError(f"Image file not found: {image_path_or_url}")
+            
+            with open(path, 'rb') as f:
+                content = f.read()
+            
+            filename = path.name
+            content_type = mimetypes.guess_type(str(path))[0] or 'image/png'
+        
+        # Upload to X API v2
+        print(f"Uploading image ({len(content)} bytes)...")
+        result = self._multipart_upload(
+            "https://api.x.com/2/media/upload",
+            fields={'media_category': 'tweet_image'},
+            files={'media': (filename, content, content_type)}
+        )
+        
+        if 'data' in result and 'id' in result['data']:
+            media_id = result['data']['id']
+            print(f"Media uploaded successfully: {media_id}")
+            return media_id
+        else:
+            raise Exception(f"Upload failed: {result}")
+    
     # === WRITE operations ===
     
-    def post_tweet(self, text, community_id=None, share_with_followers=False, quote_tweet_id=None):
+    def post_tweet(self, text, community_id=None, share_with_followers=False, quote_tweet_id=None, media_ids=None):
         """Post a tweet (optionally to a community or as a quote retweet)"""
         data = {'text': text}
         if community_id:
@@ -114,6 +203,8 @@ class XWriteClient:
                 data['share_with_followers'] = True
         if quote_tweet_id:
             data['quote_tweet_id'] = quote_tweet_id
+        if media_ids:
+            data['media'] = {'media_ids': media_ids if isinstance(media_ids, list) else [media_ids]}
         return self._api_request('POST', '/2/tweets', data=data)
     
     def delete_tweet(self, tweet_id):
@@ -152,17 +243,19 @@ def main():
         print("X API Write Client")
         print("\nUsage: python x_write.py <command> [args...]")
         print("\nCommands:")
-        print("  post <text>              - Post a tweet")
-        print("  quote <tweet_id> <text>  - Quote retweet a tweet")
+        print("  post <text>                      - Post a tweet")
+        print("  post-image <image_path> <text>   - Post a tweet with image")
+        print("  upload <image_path>              - Upload image, returns media_id")
+        print("  quote <tweet_id> <text>          - Quote retweet a tweet")
         print("  community <community_id> <text> [--share] - Post to a community")
-        print("  delete <tweet_id>        - Delete a tweet")
-        print("  like <tweet_id> [user]   - Like a tweet (user=me or user_id)")
-        print("  unlike <tweet_id> [user] - Unlike a tweet")
-        print("  retweet <tweet_id> [user] - Retweet")
-        print("  unretweet <tweet_id> [user] - Undo retweet")
-        print("  follow <user_id> [user]  - Follow a user")
-        print("  unfollow <user_id> [user] - Unfollow a user")
-        print("  refresh                  - Refresh access token")
+        print("  delete <tweet_id>                - Delete a tweet")
+        print("  like <tweet_id> [user]           - Like a tweet (user=me or user_id)")
+        print("  unlike <tweet_id> [user]         - Unlike a tweet")
+        print("  retweet <tweet_id> [user]        - Retweet")
+        print("  unretweet <tweet_id> [user]      - Undo retweet")
+        print("  follow <user_id> [user]          - Follow a user")
+        print("  unfollow <user_id> [user]        - Unfollow a user")
+        print("  refresh                          - Refresh access token")
         sys.exit(1)
     
     client = XWriteClient()
@@ -181,6 +274,28 @@ def main():
         if command == "post":
             text = ' '.join(sys.argv[2:])
             result = client.post_tweet(text)
+            print(json.dumps(result, indent=2))
+        
+        elif command == "upload":
+            if len(sys.argv) < 3:
+                print("Usage: python x_write.py upload <image_path_or_url>")
+                sys.exit(1)
+            image_path = sys.argv[2]
+            media_id = client.upload_media(image_path)
+            print(json.dumps({"media_id": media_id}, indent=2))
+        
+        elif command == "post-image":
+            if len(sys.argv) < 4:
+                print("Usage: python x_write.py post-image <image_path_or_url> <text>")
+                sys.exit(1)
+            image_path = sys.argv[2]
+            text = ' '.join(sys.argv[3:])
+            
+            # Upload image
+            media_id = client.upload_media(image_path)
+            
+            # Post tweet with media
+            result = client.post_tweet(text, media_ids=[media_id])
             print(json.dumps(result, indent=2))
         
         elif command == "community":
