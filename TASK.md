@@ -106,4 +106,11 @@ git log -p         # コミット履歴を確認
 
 _タスク管理は GitHub Project に移行しました_
 
+## 🗺️ 構成図作成
+
+> **GitHub Project に移行済み**
+> - [#2 ONIZUKA AGI Co. 構成図の作成](https://github.com/onizuka-agi-co/onizuka-agi-co/issues/2) — P2, S, 3/2
+
+---
+
 _更新日: 2026-03-01_
