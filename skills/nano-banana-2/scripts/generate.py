@@ -2,14 +2,16 @@
 """
 nano-banana-2 Image Generator
 Generate images from text prompts using fal.ai's nano-banana-2 model.
+Supports both text-to-image and image-to-image (edit) modes.
 """
 
 import argparse
+import base64
 import json
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 try:
     import requests
@@ -20,8 +22,9 @@ except ImportError:
     import requests
 
 
-# fal.ai API endpoint
+# fal.ai API endpoints
 FAL_API_URL = "https://queue.fal.run/fal-ai/nano-banana-2"
+FAL_EDIT_API_URL = "https://queue.fal.run/fal-ai/nano-banana-2/edit"
 FAL_RESULT_URL = "https://queue.fal.run/fal-ai/nano-banana-2/requests"
 
 
@@ -48,6 +51,45 @@ def get_api_key() -> str:
     )
 
 
+def image_to_data_url(image_path: str) -> str:
+    """Convert a local image file to a data URL."""
+    path = Path(image_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+    
+    # Determine MIME type
+    suffix = path.suffix.lower()
+    mime_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+    mime_type = mime_types.get(suffix, "application/octet-stream")
+    
+    # Read and encode
+    with open(path, "rb") as f:
+        image_data = f.read()
+    
+    encoded = base64.b64encode(image_data).decode("utf-8")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def process_image_urls(image_paths: List[str]) -> List[str]:
+    """Process image paths/URLs into usable URLs for the API."""
+    urls = []
+    for img in image_paths:
+        if img.startswith("http://") or img.startswith("https://"):
+            # Already a URL
+            urls.append(img)
+        else:
+            # Local file - convert to data URL
+            data_url = image_to_data_url(img)
+            urls.append(data_url)
+    return urls
+
+
 def submit_request(
     api_key: str,
     prompt: str,
@@ -57,8 +99,13 @@ def submit_request(
     output_format: str = "png",
     seed: Optional[int] = None,
     enable_web_search: bool = False,
-) -> str:
-    """Submit image generation request to fal.ai."""
+    image_urls: Optional[List[str]] = None,
+) -> tuple:
+    """Submit image generation request to fal.ai.
+    
+    Returns:
+        tuple: (request_id, is_edit_mode)
+    """
     headers = {
         "Authorization": f"Key {api_key}",
         "Content-Type": "application/json",
@@ -76,8 +123,20 @@ def submit_request(
     if seed is not None:
         payload["seed"] = seed
 
+    # Determine endpoint based on whether images are provided
+    # Note: edit endpoint returns same status/result URLs as regular endpoint
+    if image_urls:
+        payload["image_urls"] = image_urls
+        api_url = FAL_EDIT_API_URL
+        is_edit = True
+        print(f"Mode: Image-to-Image (Edit)")
+    else:
+        api_url = FAL_API_URL
+        is_edit = False
+        print(f"Mode: Text-to-Image")
+
     response = requests.post(
-        FAL_API_URL,
+        api_url,
         headers=headers,
         json=payload,
     )
@@ -86,7 +145,7 @@ def submit_request(
         raise Exception(f"API request failed: {response.status_code} - {response.text}")
 
     data = response.json()
-    return data["request_id"]
+    return data["request_id"], is_edit
 
 
 def get_status(api_key: str, request_id: str) -> dict:
@@ -172,6 +231,12 @@ def main():
         help="Text prompt for image generation",
     )
     parser.add_argument(
+        "--image", "-i",
+        action="append",
+        dest="images",
+        help="Input image for edit mode (can be URL or local path). Can be used multiple times.",
+    )
+    parser.add_argument(
         "--num-images", "-n",
         type=int,
         default=1,
@@ -230,9 +295,15 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Process input images if provided
+    image_urls = None
+    if args.images:
+        print(f"Processing {len(args.images)} input image(s)...")
+        image_urls = process_image_urls(args.images)
+
     print(f"Submitting request: {args.prompt[:50]}...")
 
-    request_id = submit_request(
+    request_id, is_edit = submit_request(
         api_key=api_key,
         prompt=args.prompt,
         num_images=args.num_images,
@@ -241,6 +312,7 @@ def main():
         output_format=args.output_format,
         seed=args.seed,
         enable_web_search=args.enable_web_search,
+        image_urls=image_urls,
     )
 
     print(f"Request ID: {request_id}")
@@ -255,12 +327,14 @@ def main():
         output = {
             "request_id": request_id,
             "prompt": args.prompt,
+            "mode": "edit" if is_edit else "generate",
             "images": images,
             "description": description,
         }
         print(json.dumps(output, indent=2))
     else:
-        print(f"\nGenerated {len(images)} image(s):")
+        mode_str = "(Edit)" if is_edit else ""
+        print(f"\nGenerated {len(images)} image(s) {mode_str}:")
         for i, img in enumerate(images, 1):
             print(f"  {i}. {img['url']}")
 
@@ -274,7 +348,8 @@ def main():
         for i, img in enumerate(images, 1):
             url = img["url"]
             ext = args.output_format
-            filename = f"nano-banana-2-{request_id[:8]}-{i}.{ext}"
+            mode_prefix = "edit" if is_edit else "gen"
+            filename = f"nano-banana-2-{mode_prefix}-{request_id[:8]}-{i}.{ext}"
             output_path = args.output_dir / filename
 
             download_image(url, output_path)
