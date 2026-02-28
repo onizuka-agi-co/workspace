@@ -1,0 +1,6 @@
+[submodule "memory"]
+	path = memory
+	url = https://github.com/onizuka-agi-co/memory.git
+[submodule "skills"]
+	path = skills
+	url = https://github.com/onizuka-agi-co/skills.git

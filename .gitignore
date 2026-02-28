@@ -1,1 +1,24 @@
-fal-key.txt
+# 機密情報
+*.json
+*-tokens.*
+*-credentials.*
+*-key.txt
+*.env
+.env.*
+
+# スクリプトと設定ファイル
+*.py
+*.sh
+*.yaml
+*.yml
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# その他
+.openclaw/
+data/
+experiments/
+temp-*/
+*.skill
