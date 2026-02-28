@@ -11,21 +11,61 @@
 
 ### 概要
 - **nanobanana2 Image-to-Image モード追加** - `--image` フラグで画像編集可能に
+- **x-write 画像アップロード機能追加** - `post-image` コマンド
 - **ONIZUKA アセット追加** - リアル版・ちび版キャラ画像
-- **FAL_KEY 永続化** - fal-key.txt + .bashrc
+- **FAL_KEY 永続化** - fal-key.txt保存
 
-### 修正・追加内容
+### nanobanana2 スキル
 - ポーリングロジック修正（202ステータス対応）
 - Image-to-Image (Edit) モード実装
 - ONIZUKA キャラクターアセット追加
+
+### x-write スキル
+- X API v2 画像アップロード（media.write scope追加）
+- OAuth2 再認証
+- `post-image` コマンド追加
+
+### ツイート
+- https://x.com/Onizuka_Renji/status/2027770319319253180
 
 ### コミット
 ```
 da3500e fix(nano-banana-2): correct polling logic
 6200ee6 feat(nano-banana-2): add ONIZUKA assets
 6ab1398 feat(nano-banana-2): add image-to-image mode
-41c8dac chore: add fal-key.txt to .gitignore
+88200ae feat(x-write): add image upload support for tweets
+c753b3c docs(x-write): add image upload commands to SKILL.md
 ```
+
+---
+```
+Step 1: Developer spawn → 完了待機
+Step 2: Reviewer spawn → 完了待機
+Step 3: 最終報告
+```
+
+#### パターン2: 並列実行（高速）
+```
+Worker A, B, C を同時spawn → 全員完了待機 → 結果まとめ
+```
+
+#### パターン3: 実践的Webアプリ開発
+```
+Phase 1: Architect (シリアル)
+Phase 2: Frontend + Backend (並列)
+Phase 3: Integrator (シリアル)
+```
+
+### 重要な学び
+- ✅ **Nested Sub-Agent成功** - Main → Orchestrator → Workers
+- ✅ **Codex5.3 spawn成功** - `agentId: "codex"` で正しく動作
+- ✅ **シリアル実行でAPI制限回避**
+- CLIバックエンド履歴は保存されない（JSONではなく直接実行）
+- `maxSpawnDepth: 2` で3層までネスト可能
+
+### リンク
+- **GitHub Pages**: https://onizuka-agi-co.github.io/onizuka-agi-co/
+- **実験ディレクトリ**: `experiments/nested-codex-test/`, `experiments/all-codex-test/`
 
 ---
 
