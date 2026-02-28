@@ -19,6 +19,10 @@ This folder is home. Treat it that way.
 - **Email**：onizuka.renjiii+onizuka-agi@gmail.com
 - **Description**：Democratizing AGI knowledge
 
+### 🏷️ ハッシュタグ
+
+X（Twitter）投稿時のハッシュタグは **#ONIZUKA_AGI** のみ使用する。
+
 ## First Run
 
 If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
