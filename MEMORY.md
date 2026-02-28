@@ -10,11 +10,24 @@
 → [memory/docs/2026/02/28/](memory/docs/2026/02/28/)
 
 ### 概要
-- **nanobanana2 スキル検証・修正** - APIキー検証、ポーリングロジック修正
+- **nano-banana-2 スキル作成** - fal.ai画像生成スキル
+- **GitHub Project スキル作成** - gh CLIでProject操作
+- **タスク管理移行** - TASK.md → GitHub Project
+- **secret scan導入検討** - gitleaksで15個のリーク検出
+
+### 作成したスキル
+- `skills/nano-banana-2/` - fal.ai画像生成
+- `skills/github-project/` - GitHub Project管理
 
 ### 修正内容
 - `generate.py` のバグ修正（`/status` エンドポイント使用、202ステータス対応）
-- コミット: `da3500e`
+- コミット: `0017194`, `da3500e`
+
+### 重要な学び
+- gitleaksでワークスペースをスキャン → 15個の機密情報リーク検出
+  - X API認証情報、Gemini APIキーなど
+  - `.gitignore`で機密ファイルを除外する必要がある
+- OpenClawのcronよりs6サービスの方が安定動作
 
 ---
 
