@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>おみくじ (Omikuji)</title>
+    <style>
+        body {
+            font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 {
+            color: #e74c3c;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 3px solid #e74c3c;
+            border-radius: 10px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        .fortune {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            font-size: 0.9em;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎴 おみくじ</h1>
+        <button onclick="drawFortune()">おみくじを引く</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const fortunes = [
+            { rank: "大吉", color: "#e74c3c", desc: "最高の運気！何をしても上手くいきます。" },
+            { rank: "中吉", color: "#e67e22", desc: "良いことがあります。前向きに進みましょう。" },
+            { rank: "小吉", color: "#f39c12", desc: "小さな幸せが訪れます。" },
+            { rank: "吉", color: "#27ae60", desc: "安定した良い日になります。" },
+            { rank: "半吉", color: "#3498db", desc: "悪くない一日です。" },
+            { rank: "末吉", color: "#9b59b6", desc: "少しずつ良い方向へ向かいます。" },
+            { rank: "凶", color: "#34495e", desc: "慎重に行動すれば乗り切れます。" }
+        ];
+
+        function drawFortune() {
+            const randomIndex = Math.floor(Math.random() * fortunes.length);
+            const fortune = fortunes[randomIndex];
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.className = 'result';
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div class="fortune" style="color: ${fortune.color}">${fortune.rank}</div>
+                    <div class="description">${fortune.desc}</div>
+                `;
+                resultDiv.className = 'result show';
+            }, 100);
+        }
+    </script>
+</body>
+</html>

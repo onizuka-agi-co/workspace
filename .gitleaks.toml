@@ -1,0 +1,34 @@
+# Gitleaks Configuration for ONIZUKA AGI Co.
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks Config"
+
+[extend]
+# Use default rules as base
+useDefault = true
+
+[[rules]]
+id = "x-api-token"
+description = "X API Token"
+regex = '''[a-zA-Z0-9]{40,}'''
+tags = ["api", "x", "twitter"]
+
+[[rules]]
+id = "fal-api-key"
+description = "FAL API Key"
+regex = '''[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'''
+tags = ["api", "fal"]
+
+[[rules]]
+id = "discord-bot-token"
+description = "Discord Bot Token"
+regex = '''[A-Za-z0-9]{24}\.[A-Za-z0-9]{6}\.[A-Za-z0-9]{27}'''
+tags = ["api", "discord"]
+
+[allowlist]
+description = "Global Allowlist"
+paths = [
+    '''^\.git/''',
+    '''^memory/docs/''',
+    '''^\.openclaw/''',
+]

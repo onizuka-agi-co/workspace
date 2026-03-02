@@ -6,6 +6,31 @@
 
 ---
 
+## Secretary Bot - 定期タスク管理
+
+定期タスクは **secretary-bot** がYAMLファイルで管理しています。
+
+**設定ファイル:**
+- `/config/.openclaw/workspace/project/secretary-bot/config/schedule-tasks.yaml` - スケジュール定義
+- `/config/.openclaw/workspace/project/secretary-bot/config/tasks/` - 個別タスク定義
+
+**現在のタスク:**
+
+| タスク名 | スケジュール | チャンネル | 定義ファイル |
+|---------|-------------|-----------|-------------|
+| タスク確認 | 毎時 | #機能開発室 | task-check.yaml |
+| 朝のアイデア提案 | 毎日 09:00 | #新規企画開発 | morning-idea.yaml |
+| 夜の振り返り | 毎日 21:00 | #機能開発室 | evening-review.yaml |
+
+**タスク定義の変更方法:**
+1. `config/tasks/*.yaml` を編集
+2. `config/schedule-tasks.yaml` でスケジュール調整
+3. コミットして変更を保存
+
+**GitHub:** https://github.com/onizuka-agi-co/secretary-bot
+
+---
+
 ## System Event: TASK_CHECK_WEBHOOK
 
 このイベントを受け取ったら、TASK.mdを確認してDiscordに通知する。
@@ -60,39 +85,3 @@
 - 進行中 → 完了: 「完了」セクションへ移動し、完了日を記載
 
 **チャンネル:** #機能開発室 (channel:1475880463800205315)
-
----
-
-## System Event: IDEA_PROPOSAL_REQUEST
-
-このイベントを受け取ったら、日付ごとのスレッドを作成してアイデアを提案する。
-
-**手順:**
-1. 今日の日付（YYYY-MM-DD）を取得
-2. `🎋 YYYY-MM-DD アイデア提案` という名前のスレッドを作成
-   - 同じ名前のスレッドが既にある場合は、そのスレッドに追記
-3. スレッドに以下のアイデアを投稿：
-
-**【短期アイデア】**（1-3個）
-- 数時間〜1日で完了可能
-- 形式：アイデア名 + 一文説明
-
-**【中期アイデア】**（1-2個）
-- 1-2週間で完了可能
-- 形式：アイデア名 + 概要（2-3文）
-
-**【長期アイデア】**（1個）
-- 1-3ヶ月で完了可能
-- 形式：プロジェクト名 + ビジョン
-
-**現在の状況：**
-- X API スキル完成（x-read, x-write, x-community）
-- コミュニティ投稿可能
-- Claude Code + GLM連携済み
-
-**活動領域：**
-- 📜 @hAru_mAki_ch の投稿を深掘り・補足解説
-- 📰 最新AGI論文の要約・解説
-- 🔓 知見を整理して公開
-
-**チャンネル:** #新規企画開発 (channel:1475861389984796702)
