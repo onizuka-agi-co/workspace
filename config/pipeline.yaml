@@ -1,0 +1,46 @@
+# Auto Content Pipeline Configuration
+# 自動コンテンツ生成パイプライン設定
+
+# HuggingFace Papers
+hf_papers:
+  # 取得する論文数
+  limit: 1
+  # キャッシュ有効期限（時間）
+  cache_expiry_hours: 1
+
+# Image Generation (nano-banana-2)
+image_generation:
+  # アスペクト比
+  aspect_ratio: "16:9"
+  # 解像度 (0.5K, 1K, 2K, 4K)
+  resolution: "1K"
+  # 出力形式 (jpeg, png, webp)
+  output_format: "png"
+  # 画像保存ディレクトリ
+  output_dir: "data/generated-images"
+
+# Posting
+posting:
+  # X投稿を有効にする
+  enable_x: true
+  # Discord投稿を有効にする
+  enable_discord: true
+  # ハッシュタグ
+  hashtags:
+    - "#ONIZUKA_AGI"
+
+# Schedule (cron format)
+schedule:
+  # 毎日 09:00 JST (00:00 UTC)
+  cron: "0 0 * * *"
+  # タイムゾーン
+  timezone: "Asia/Tokyo"
+
+# Logging
+logging:
+  # ログレベル (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+  # ログファイル
+  file: "logs/auto_content_pipeline.log"
+  # 結果保存先
+  results_dir: "data/pipeline-results"
