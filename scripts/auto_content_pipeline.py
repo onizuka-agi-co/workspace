@@ -163,11 +163,141 @@ def post_to_discord(text: str, image_url: Optional[str] = None) -> bool:
     return True
 
 
+def save_to_knowledge_base(paper_data: dict, image_url: Optional[str] = None) -> bool:
+    """Save paper to Knowledge Base (memory/docs/papers/)."""
+    papers_dir = WORKSPACE_ROOT / "memory" / "docs" / "papers"
+    papers_dir.mkdir(parents=True, exist_ok=True)
+    
+    paper = paper_data.get("paper", paper_data)
+    arxiv_id = paper.get("id", "")
+    title = paper.get("title", "")
+    summary = paper.get("ai_summary", paper.get("summary", ""))
+    keywords = paper.get("ai_keywords", [])
+    authors = paper.get("authors", [])
+    upvotes = paper.get("upvotes", 0)
+    
+    # Auto-categorize based on keywords
+    category = "general"
+    keyword_str = " ".join(keywords).lower()
+    if any(k in keyword_str for k in ["agi", "artificial general", "reasoning", "world model"]):
+        category = "agi"
+    elif any(k in keyword_str for k in ["llm", "language model", "gpt", "transformer"]):
+        category = "llm"
+    elif any(k in keyword_str for k in ["vision", "image", "multimodal", "diffusion"]):
+        category = "vision"
+    elif any(k in keyword_str for k in ["rl", "reinforcement", "agent"]):
+        category = "rl"
+    
+    # Create category folder
+    category_dir = papers_dir / category
+    category_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate filename
+    filename = f"{arxiv_id}.md"
+    filepath = category_dir / filename
+    
+    # Skip if already exists
+    if filepath.exists():
+        print(f"⚠️ Paper already in Knowledge Base: {category}/{filename}")
+        return False
+    
+    # Generate content
+    tags_str = " ".join(f"#{k.replace(' ', '_')}" for k in keywords[:5]) if keywords else "#AI #Research"
+    
+    content = f"""---
+title: 📄 {title}
+---
+
+# 📄 {title}
+
+## メタデータ
+
+| 項目 | 値 |
+|------|-----|
+| **arXiv ID** | {arxiv_id} |
+| **公開日** | {paper.get("published", "N/A")} |
+| **カテゴリ** | {category} |
+| **タグ** | {', '.join(keywords[:5]) if keywords else 'N/A'} |
+
+## リンク
+
+- [arXiv](https://arxiv.org/abs/{arxiv_id})
+- [HuggingFace Papers](https://huggingface.co/papers/{arxiv_id})
+
+---
+
+## 📝 要約
+
+{summary}
+
+---
+
+## 🎨 図解
+
+{"![図解画像](" + image_url + ")" if image_url else "（図解生成待ち）"}
+
+*この図解は nano-banana-2 で生成された概念図です。*
+
+---
+
+## 💡 解説
+
+### 背景
+
+（自動生成予定）
+
+### 貢献
+
+（自動生成予定）
+
+### 技術的詳細
+
+（自動生成予定）
+
+### 意義
+
+（自動生成予定）
+
+---
+
+## 🔗 関連論文
+
+（自動リンク予定）
+
+---
+
+## タグ
+
+{tags_str}
+"""
+    
+    # Write file
+    filepath.write_text(content)
+    print(f"✅ Saved to Knowledge Base: {category}/{filename}")
+    
+    return True
+
+
+def update_knowledge_base_index():
+    """Update the papers index in Knowledge Base."""
+    papers_dir = WORKSPACE_ROOT / "memory" / "docs" / "papers"
+    
+    # Call hf_papers update_index function
+    try:
+        hf_papers.update_papers_index(papers_dir)
+        print("✅ Updated Knowledge Base index")
+        return True
+    except Exception as e:
+        print(f"⚠️ Failed to update index: {e}")
+        return False
+
+
 def run_pipeline(
     dry_run: bool = False,
     skip_image: bool = False,
     skip_x: bool = False,
-    skip_discord: bool = False
+    skip_discord: bool = False,
+    skip_kb: bool = False
 ) -> dict:
     """Run the full content generation pipeline."""
     
@@ -177,7 +307,8 @@ def run_pipeline(
         "image_url": None,
         "explanation": None,
         "x_posted": False,
-        "discord_posted": False
+        "discord_posted": False,
+        "kb_saved": False
     }
     
     # Step 1: Get top paper
@@ -212,13 +343,21 @@ def run_pipeline(
         else:
             print("⚠️ Image generation failed (continuing without image)")
     
-    # Step 4: Post to X
+    # Step 4: Save to Knowledge Base
+    if not skip_kb:
+        print("\n📚 Saving to Knowledge Base...")
+        saved = save_to_knowledge_base(paper_data, result.get("image_url"))
+        result["kb_saved"] = saved
+        if saved:
+            update_knowledge_base_index()
+    
+    # Step 5: Post to X
     if not skip_x and not dry_run:
         print("\n🐦 Posting to X...")
         posted = post_to_x(explanation, result.get("image_url"))
         result["x_posted"] = posted
     
-    # Step 5: Post to Discord
+    # Step 6: Post to Discord
     if not skip_discord and not dry_run:
         print("\n💬 Posting to Discord...")
         posted = post_to_discord(explanation, result.get("image_url"))
@@ -229,7 +368,7 @@ def run_pipeline(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Auto Content Pipeline - HuggingFace Papers to X/Discord"
+        description="Auto Content Pipeline - HuggingFace Papers to X/Discord/Knowledge Base"
     )
     parser.add_argument("--dry-run", action="store_true",
                        help="Run without posting (just generate content)")
@@ -239,6 +378,8 @@ def main():
                        help="Skip X posting")
     parser.add_argument("--skip-discord", action="store_true",
                        help="Skip Discord posting")
+    parser.add_argument("--skip-kb", action="store_true",
+                       help="Skip Knowledge Base saving")
     parser.add_argument("--output", type=str,
                        help="Output JSON file for results")
     
@@ -252,7 +393,8 @@ def main():
         dry_run=args.dry_run,
         skip_image=args.skip_image,
         skip_x=args.skip_x,
-        skip_discord=args.skip_discord
+        skip_discord=args.skip_discord,
+        skip_kb=args.skip_kb
     )
     
     print("\n" + "=" * 50)
