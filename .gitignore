@@ -9,8 +9,12 @@
 # スクリプトと設定ファイル
 *.py
 *.sh
-*.yaml
-*.yml
+# *.yaml - allow .github/workflows/*.yml
+# *.yml
+
+# Allow .github folder
+!.github/
+!.github/**
 
 # Node modules
 node_modules/
