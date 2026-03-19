@@ -7,8 +7,9 @@
 .env.*
 
 # スクリプトと設定ファイル
-*.py
+# *.py - allow scripts/*.py
 *.sh
+!scripts/*.py
 # *.yaml - allow .github/workflows/*.yml
 # *.yml
 
