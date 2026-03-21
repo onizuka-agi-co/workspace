@@ -6,6 +6,7 @@ X のブックマークを取得するための小さい Python CLI です。
 - OAuth 1.0a の `API Key/Secret + Access Token/Secret` が揃っている場合も取得可能
 - ページネーションを辿って JSON に保存可能
 - フォルダ一覧と特定ブックマークフォルダの中身も取得可能
+- ブックマーク削除も可能
 
 ## 置き場所
 
@@ -73,6 +74,12 @@ uv run python bookmarks_cli.py list-folders --output output/bookmark-folders.jso
 
 ```bash
 uv run python bookmarks_cli.py fetch-folder --folder-id 2026593501866242363 --output output/folder-2026593501866242363.json
+```
+
+ブックマーク削除:
+
+```bash
+uv run python bookmarks_cli.py delete-bookmark --tweet-id 2026418435408986423 --output output/delete-2026418435408986423.json
 ```
 
 ## すでに OAuth 2.0 ユーザートークンがある場合
