@@ -770,6 +770,28 @@ def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_fi
     write_json_result(result, args, f"{len(tweet_ids)} folder bookmarks")
 
 
+def delete_bookmark(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+
+    payload, response = request_x(
+        auth_context,
+        "DELETE",
+        f"/users/{user['id']}/bookmarks/{args.tweet_id}",
+        settings=settings,
+    )
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        "tweet_id": args.tweet_id,
+        "result": payload,
+        "rate_limit": parse_rate_limit(response.headers),
+    }
+    write_json_result(result, args, f"bookmark deletion result for {args.tweet_id}")
+
+
 def login(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
     if not settings.client_id:
         raise XApiError("`X_CLIENT_ID` is required for OAuth 2.0 login.")
@@ -872,6 +894,12 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_folder_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
     fetch_folder_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
     fetch_folder_parser.set_defaults(func=fetch_bookmark_folder)
+
+    delete_parser = subparsers.add_parser("delete-bookmark", help="Remove a bookmarked post from the authenticated user's bookmarks.")
+    delete_parser.add_argument("--tweet-id", required=True, help="Post ID to remove from bookmarks.")
+    delete_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
+    delete_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
+    delete_parser.set_defaults(func=delete_bookmark)
 
     return parser
 
