@@ -5,6 +5,7 @@ X のブックマークを取得するための小さい Python CLI です。
 - OAuth 2.0 PKCE でユーザーアクセストークンを発行して取得
 - OAuth 1.0a の `API Key/Secret + Access Token/Secret` が揃っている場合も取得可能
 - ページネーションを辿って JSON に保存可能
+- フォルダ一覧と特定ブックマークフォルダの中身も取得可能
 
 ## 置き場所
 
@@ -62,6 +63,18 @@ uv run python bookmarks_cli.py fetch --output bookmarks.json
 uv run python bookmarks_cli.py fetch --limit 200 --output output/bookmarks.json
 ```
 
+フォルダ一覧:
+
+```bash
+uv run python bookmarks_cli.py list-folders --output output/bookmark-folders.json
+```
+
+特定フォルダの中身:
+
+```bash
+uv run python bookmarks_cli.py fetch-folder --folder-id 2026593501866242363 --output output/folder-2026593501866242363.json
+```
+
 ## すでに OAuth 2.0 ユーザートークンがある場合
 
 `config.env` に以下を入れれば `login` を飛ばせます。
@@ -92,7 +105,7 @@ uv run python bookmarks_cli.py fetch --output bookmarks.json
 
 ## 出力形式
 
-`fetch` は次のような JSON を返します。
+`fetch` と `fetch-folder` は次のような JSON を返します。
 
 - `user`: 認証されたユーザー情報
 - `count`: 取得したブックマーク件数
@@ -100,6 +113,8 @@ uv run python bookmarks_cli.py fetch --output bookmarks.json
 - `bookmarks`: 投稿一覧
 - `includes`: 展開されたユーザー・メディア情報
 - `rate_limit`: 最終レスポンス時点のレート制限情報
+
+`list-folders` は `folders` 配列を返します。
 
 ## 補足
 
