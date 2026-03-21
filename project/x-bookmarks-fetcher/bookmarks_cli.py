@@ -1,0 +1,716 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+import re
+import secrets
+import sys
+import time
+import webbrowser
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, urlencode, urlparse
+
+import requests
+from dotenv import load_dotenv
+from requests_oauthlib import OAuth1
+
+API_BASE_URL = "https://api.x.com/2"
+AUTHORIZE_URL = "https://x.com/i/oauth2/authorize"
+TOKEN_URL = f"{API_BASE_URL}/oauth2/token"
+
+DEFAULT_SCOPES = ["tweet.read", "users.read", "bookmark.read", "offline.access"]
+DEFAULT_TWEET_FIELDS = [
+    "attachments",
+    "author_id",
+    "conversation_id",
+    "created_at",
+    "entities",
+    "lang",
+    "possibly_sensitive",
+    "public_metrics",
+    "referenced_tweets",
+    "source",
+]
+DEFAULT_EXPANSIONS = [
+    "attachments.media_keys",
+    "author_id",
+    "in_reply_to_user_id",
+    "referenced_tweets.id",
+    "referenced_tweets.id.author_id",
+]
+DEFAULT_USER_FIELDS = [
+    "created_at",
+    "description",
+    "id",
+    "name",
+    "profile_image_url",
+    "public_metrics",
+    "username",
+    "verified",
+]
+DEFAULT_MEDIA_FIELDS = [
+    "alt_text",
+    "duration_ms",
+    "height",
+    "media_key",
+    "preview_image_url",
+    "public_metrics",
+    "type",
+    "url",
+    "width",
+]
+DEFAULT_POLL_FIELDS = ["duration_minutes", "end_datetime", "id", "options", "voting_status"]
+DEFAULT_PLACE_FIELDS = ["contained_within", "country", "country_code", "full_name", "geo", "id", "name", "place_type"]
+IDENTITY_KEYS = {
+    "media": "media_key",
+    "places": "id",
+    "polls": "id",
+    "tweets": "id",
+    "users": "id",
+}
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_ENV_FILE = SCRIPT_DIR / "config.env"
+DEFAULT_TOKEN_FILE = SCRIPT_DIR / ".x-user-token.json"
+USER_AGENT = "x-bookmarks-fetcher/0.1"
+
+
+class XApiError(RuntimeError):
+    """Raised when the X API returns an error response."""
+
+
+@dataclass
+class Settings:
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    bearer_token: str
+    user_access_token: str
+    user_refresh_token: str
+    api_key: str
+    api_key_secret: str
+    oauth1_access_token: str
+    oauth1_access_token_secret: str
+
+    @classmethod
+    def from_env(cls) -> "Settings":
+        return cls(
+            client_id=read_env("X_CLIENT_ID"),
+            client_secret=read_env("X_CLIENT_SECRET"),
+            redirect_uri=read_env("X_BOOKMARKS_REDIRECT_URI"),
+            bearer_token=read_env("X_BEARER_TOKEN"),
+            user_access_token=read_env("X_USER_ACCESS_TOKEN"),
+            user_refresh_token=read_env("X_USER_REFRESH_TOKEN"),
+            api_key=read_env("X_API_KEY"),
+            api_key_secret=read_env("X_API_KEY_SECRET"),
+            oauth1_access_token=read_env("X_OAUTH1_ACCESS_TOKEN", "X_ACCESS_TOKEN"),
+            oauth1_access_token_secret=read_env("X_OAUTH1_ACCESS_TOKEN_SECRET", "X_ACCESS_TOKEN_SECRET"),
+        )
+
+
+@dataclass
+class AuthContext:
+    mode: str
+    source: str
+    token: dict[str, Any] | None = None
+    token_file: Path | None = None
+    oauth1: OAuth1 | None = None
+
+
+def read_env(*names: str, default: str = "") -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value.strip()
+    return default
+
+
+def load_project_env(env_file: Path) -> None:
+    if env_file.exists():
+        load_dotenv(env_file, override=False)
+
+
+def now_epoch() -> int:
+    return int(time.time())
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def load_json(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def normalize_token_payload(payload: dict[str, Any], previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    token = dict(payload)
+    if previous:
+        if not token.get("refresh_token") and previous.get("refresh_token"):
+            token["refresh_token"] = previous["refresh_token"]
+        if not token.get("scope") and previous.get("scope"):
+            token["scope"] = previous["scope"]
+
+    obtained_at = now_epoch()
+    token["obtained_at"] = obtained_at
+
+    expires_in = token.get("expires_in")
+    if expires_in is not None:
+        token["expires_at"] = obtained_at + int(expires_in)
+    elif previous and previous.get("expires_at"):
+        token["expires_at"] = previous["expires_at"]
+
+    return token
+
+
+def build_basic_auth_header(client_id: str, client_secret: str) -> str:
+    credentials = f"{client_id}:{client_secret}".encode("utf-8")
+    encoded = base64.b64encode(credentials).decode("ascii")
+    return f"Basic {encoded}"
+
+
+def make_code_verifier() -> str:
+    verifier = secrets.token_urlsafe(72)
+    if len(verifier) < 43:
+        verifier = verifier + ("a" * (43 - len(verifier)))
+    return verifier[:128]
+
+
+def make_code_challenge(verifier: str) -> str:
+    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+
+
+def build_authorization_url(client_id: str, redirect_uri: str, scopes: list[str], state: str, code_challenge: str) -> str:
+    query = urlencode(
+        {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": " ".join(scopes),
+            "state": state,
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+        }
+    )
+    return f"{AUTHORIZE_URL}?{query}"
+
+
+def parse_callback_input(raw_value: str) -> tuple[str, str | None]:
+    value = raw_value.strip()
+    if not value:
+        raise ValueError("Empty callback URL.")
+
+    if "://" in value:
+        query = parse_qs(urlparse(value).query)
+    else:
+        query = parse_qs(value.lstrip("?"))
+
+    error_value = query.get("error", [None])[0]
+    if error_value:
+        description = query.get("error_description", [""])[0]
+        raise ValueError(f"Authorization failed: {error_value} {description}".strip())
+
+    code = query.get("code", [None])[0]
+    if not code:
+        raise ValueError("Authorization code not found in callback URL.")
+
+    state = query.get("state", [None])[0]
+    return code, state
+
+
+def format_response_error(response: requests.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        body = response.text.strip()
+        return body[:500] if body else f"HTTP {response.status_code}"
+
+    errors = payload.get("errors")
+    if isinstance(errors, list) and errors:
+        messages = []
+        for entry in errors:
+            parts = [str(entry.get("title", "")).strip(), str(entry.get("detail", "")).strip()]
+            message = " - ".join(part for part in parts if part)
+            if message:
+                messages.append(message)
+        if messages:
+            return " | ".join(messages)
+
+    for key in ("error_description", "error", "detail", "title"):
+        value = payload.get(key)
+        if value:
+            return str(value)
+
+    return json.dumps(payload, ensure_ascii=False)[:500]
+
+
+def request_x(
+    auth_context: AuthContext,
+    method: str,
+    path: str,
+    *,
+    params: dict[str, Any] | None = None,
+    json_body: dict[str, Any] | None = None,
+    settings: Settings | None = None,
+    retry_on_401: bool = True,
+) -> tuple[dict[str, Any], requests.Response]:
+    url = path if path.startswith("http") else f"{API_BASE_URL}{path}"
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    auth = None
+
+    if auth_context.mode == "oauth2":
+        if not auth_context.token or not auth_context.token.get("access_token"):
+            raise XApiError("OAuth 2.0 access token is missing.")
+        headers["Authorization"] = f"Bearer {auth_context.token['access_token']}"
+    elif auth_context.mode == "oauth1":
+        auth = auth_context.oauth1
+    else:
+        raise XApiError(f"Unsupported auth mode: {auth_context.mode}")
+
+    response = requests.request(
+        method=method,
+        url=url,
+        params=params,
+        json=json_body,
+        headers=headers,
+        auth=auth,
+        timeout=30,
+    )
+
+    if response.status_code == 401 and retry_on_401 and auth_context.mode == "oauth2" and auth_context.token and auth_context.token.get("refresh_token") and settings:
+        refreshed = refresh_oauth2_token(settings, auth_context.token)
+        auth_context.token = refreshed
+        if auth_context.token_file:
+            save_json(auth_context.token_file, refreshed)
+        return request_x(
+            auth_context,
+            method,
+            path,
+            params=params,
+            json_body=json_body,
+            settings=settings,
+            retry_on_401=False,
+        )
+
+    if not response.ok:
+        raise XApiError(
+            f"X API request failed ({response.status_code} {response.reason}): {format_response_error(response)}"
+        )
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise XApiError("X API returned a non-JSON response.") from exc
+
+    return payload, response
+
+
+def refresh_oauth2_token(settings: Settings, token: dict[str, Any]) -> dict[str, Any]:
+    refresh_token = token.get("refresh_token")
+    if not refresh_token:
+        raise XApiError("Refresh token is not available.")
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+    }
+
+    if settings.client_secret:
+        headers["Authorization"] = build_basic_auth_header(settings.client_id, settings.client_secret)
+    else:
+        data["client_id"] = settings.client_id
+
+    response = requests.post(TOKEN_URL, headers=headers, data=data, timeout=30)
+    if not response.ok:
+        raise XApiError(
+            f"Failed to refresh OAuth 2.0 token ({response.status_code} {response.reason}): {format_response_error(response)}"
+        )
+
+    return normalize_token_payload(response.json(), previous=token)
+
+
+def ensure_oauth2_token_is_fresh(settings: Settings, token: dict[str, Any], token_file: Path | None = None) -> dict[str, Any]:
+    expires_at = token.get("expires_at")
+    if expires_at is None and token.get("expires_in") and token.get("obtained_at"):
+        expires_at = int(token["obtained_at"]) + int(token["expires_in"])
+        token["expires_at"] = expires_at
+
+    if expires_at and int(expires_at) <= now_epoch() + 60 and token.get("refresh_token"):
+        token = refresh_oauth2_token(settings, token)
+        if token_file:
+            save_json(token_file, token)
+
+    return token
+
+
+def exchange_code_for_token(settings: Settings, code: str, verifier: str, redirect_uri: str) -> dict[str, Any]:
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    data = {
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri,
+        "code_verifier": verifier,
+    }
+
+    if settings.client_secret:
+        headers["Authorization"] = build_basic_auth_header(settings.client_id, settings.client_secret)
+    else:
+        data["client_id"] = settings.client_id
+
+    response = requests.post(TOKEN_URL, headers=headers, data=data, timeout=30)
+    if not response.ok:
+        raise XApiError(
+            f"Failed to exchange authorization code ({response.status_code} {response.reason}): {format_response_error(response)}"
+        )
+
+    return normalize_token_payload(response.json())
+
+
+def looks_like_oauth1_access_token(token: str) -> bool:
+    return bool(token and re.match(r"^\d+-", token))
+
+
+def build_auth_help(settings: Settings, token_file: Path) -> str:
+    lines = ["Unable to find a bookmark-capable authentication setup."]
+
+    if token_file.exists():
+        lines.append(f"- Token file exists but could not be used: {token_file}")
+
+    if settings.user_access_token:
+        lines.append("- `X_USER_ACCESS_TOKEN` is set, but it was not accepted as a user-context bearer token.")
+
+    if settings.client_id:
+        redirect_hint = settings.redirect_uri or "<registered-redirect-uri>"
+        lines.append(
+            f"- OAuth 2.0 is available. Run `uv run python bookmarks_cli.py login --redirect-uri {redirect_hint}` to mint a bookmark-capable user token."
+        )
+    else:
+        lines.append("- Missing `X_CLIENT_ID`, so the OAuth 2.0 login flow cannot start.")
+
+    if settings.bearer_token:
+        lines.append("- `X_BEARER_TOKEN` appears configured, but app-only bearer tokens cannot read private bookmarks.")
+
+    if settings.oauth1_access_token or settings.oauth1_access_token_secret:
+        if settings.api_key and settings.api_key_secret:
+            lines.append("- OAuth 1.0a credentials look complete. The request failure is likely token- or permission-related.")
+        else:
+            lines.append(
+                "- OAuth 1.0a is incomplete. Add `X_API_KEY` and `X_API_KEY_SECRET` alongside the access token pair if you want direct OAuth 1.0a calls."
+            )
+            if looks_like_oauth1_access_token(settings.oauth1_access_token):
+                lines.append("- The provided access token format matches classic OAuth 1.0a, not an OAuth 2.0 bearer token.")
+
+    return "\n".join(lines)
+
+
+def choose_auth(settings: Settings, token_file: Path) -> AuthContext:
+    token_data = load_json(token_file)
+    if token_data and token_data.get("access_token"):
+        token_data = ensure_oauth2_token_is_fresh(settings, token_data, token_file=token_file)
+        return AuthContext(mode="oauth2", source="token_file", token=token_data, token_file=token_file)
+
+    if settings.user_access_token:
+        token_data = normalize_token_payload(
+            {
+                "access_token": settings.user_access_token,
+                "refresh_token": settings.user_refresh_token,
+                "scope": " ".join(DEFAULT_SCOPES),
+            }
+        )
+        return AuthContext(mode="oauth2", source="env_user_token", token=token_data)
+
+    if all(
+        [
+            settings.api_key,
+            settings.api_key_secret,
+            settings.oauth1_access_token,
+            settings.oauth1_access_token_secret,
+        ]
+    ):
+        oauth1 = OAuth1(
+            settings.api_key,
+            client_secret=settings.api_key_secret,
+            resource_owner_key=settings.oauth1_access_token,
+            resource_owner_secret=settings.oauth1_access_token_secret,
+        )
+        return AuthContext(mode="oauth1", source="env_oauth1", oauth1=oauth1)
+
+    raise XApiError(build_auth_help(settings, token_file))
+
+
+def parse_rate_limit(headers: requests.structures.CaseInsensitiveDict[str]) -> dict[str, Any]:
+    reset = headers.get("x-rate-limit-reset")
+    reset_at = None
+    if reset and reset.isdigit():
+        reset_at = datetime.fromtimestamp(int(reset), tz=timezone.utc).isoformat()
+
+    return {
+        "limit": headers.get("x-rate-limit-limit"),
+        "remaining": headers.get("x-rate-limit-remaining"),
+        "reset": reset,
+        "reset_at": reset_at,
+    }
+
+
+def merge_includes(target: dict[str, list[dict[str, Any]]], page_includes: dict[str, Any] | None) -> None:
+    if not page_includes:
+        return
+
+    for key, items in page_includes.items():
+        if not isinstance(items, list):
+            continue
+
+        bucket = target.setdefault(key, [])
+        identity_key = IDENTITY_KEYS.get(key)
+        existing = set()
+        if identity_key:
+            existing = {item.get(identity_key) for item in bucket}
+
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if identity_key:
+                identity = item.get(identity_key)
+                if identity in existing:
+                    continue
+                existing.add(identity)
+            bucket.append(item)
+
+
+def get_authenticated_user(auth_context: AuthContext, settings: Settings) -> dict[str, Any]:
+    payload, _ = request_x(
+        auth_context,
+        "GET",
+        "/users/me",
+        params={
+            "user.fields": ",".join(DEFAULT_USER_FIELDS),
+        },
+        settings=settings,
+    )
+    user = payload.get("data")
+    if not isinstance(user, dict):
+        raise XApiError("Authenticated user response did not include `data`.")
+    return user
+
+
+def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+
+    remaining = args.limit
+    next_token = None
+    page_count = 0
+    truncated = False
+    bookmarks: list[dict[str, Any]] = []
+    includes: dict[str, list[dict[str, Any]]] = {}
+    last_rate_limit: dict[str, Any] = {}
+
+    while True:
+        page_size = args.page_size
+        if remaining is not None:
+            page_size = min(page_size, remaining)
+            if page_size <= 0:
+                truncated = True
+                break
+
+        params: dict[str, Any] = {
+            "max_results": page_size,
+            "tweet.fields": ",".join(DEFAULT_TWEET_FIELDS),
+            "expansions": ",".join(DEFAULT_EXPANSIONS),
+            "user.fields": ",".join(DEFAULT_USER_FIELDS),
+            "media.fields": ",".join(DEFAULT_MEDIA_FIELDS),
+            "poll.fields": ",".join(DEFAULT_POLL_FIELDS),
+            "place.fields": ",".join(DEFAULT_PLACE_FIELDS),
+        }
+        if next_token:
+            params["pagination_token"] = next_token
+
+        payload, response = request_x(
+            auth_context,
+            "GET",
+            f"/users/{user['id']}/bookmarks",
+            params=params,
+            settings=settings,
+        )
+        page_count += 1
+
+        page_items = payload.get("data") or []
+        if not isinstance(page_items, list):
+            raise XApiError("Bookmark response contained an unexpected `data` shape.")
+
+        bookmarks.extend(page_items)
+        merge_includes(includes, payload.get("includes"))
+        last_rate_limit = parse_rate_limit(response.headers)
+
+        if remaining is not None:
+            remaining -= len(page_items)
+            if remaining <= 0:
+                truncated = bool(payload.get("meta", {}).get("next_token"))
+                break
+
+        next_token = payload.get("meta", {}).get("next_token")
+        if not next_token:
+            break
+
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        "count": len(bookmarks),
+        "pages_fetched": page_count,
+        "truncated": truncated,
+        "bookmarks": bookmarks,
+        "includes": includes,
+        "rate_limit": last_rate_limit,
+    }
+
+    output_text = json.dumps(result, indent=None if args.compact else 2, ensure_ascii=False)
+    if args.output:
+        output_path = Path(args.output).expanduser()
+        if not output_path.is_absolute():
+            output_path = Path.cwd() / output_path
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output_text + "\n", encoding="utf-8")
+        print(f"Saved {len(bookmarks)} bookmarks to {output_path}")
+    else:
+        print(output_text)
+
+
+def login(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    if not settings.client_id:
+        raise XApiError("`X_CLIENT_ID` is required for OAuth 2.0 login.")
+
+    redirect_uri = args.redirect_uri or settings.redirect_uri
+    if not redirect_uri:
+        raise XApiError(
+            "Redirect URI is required. Pass `--redirect-uri` or set `X_BOOKMARKS_REDIRECT_URI` to the exact callback registered in the X Developer Console."
+        )
+
+    scopes = [scope for scope in args.scopes.split() if scope]
+    state = secrets.token_urlsafe(24)
+    verifier = make_code_verifier()
+    challenge = make_code_challenge(verifier)
+    auth_url = build_authorization_url(settings.client_id, redirect_uri, scopes, state, challenge)
+
+    print("Open the following URL and authorize the app:\n")
+    print(auth_url)
+    print()
+
+    if not args.no_browser:
+        try:
+            webbrowser.open(auth_url, new=1, autoraise=False)
+        except Exception:
+            pass
+
+    callback_input = input("Paste the full callback URL (or just the query string):\n> ").strip()
+    code, returned_state = parse_callback_input(callback_input)
+    if returned_state != state:
+        raise XApiError("State mismatch detected while completing OAuth 2.0 login.")
+
+    token = exchange_code_for_token(settings, code, verifier, redirect_uri)
+    token["scope"] = token.get("scope") or " ".join(scopes)
+    save_json(token_file, token)
+
+    print(f"Saved OAuth 2.0 token to {token_file}")
+    if token.get("expires_at"):
+        expires_at = datetime.fromtimestamp(int(token["expires_at"]), tz=timezone.utc).isoformat()
+        print(f"Access token expires at: {expires_at}")
+    if token.get("refresh_token"):
+        print("Refresh token stored for automatic renewal.")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Fetch X bookmarks using OAuth 2.0 or OAuth 1.0a.")
+    parser.add_argument("--env-file", default=str(DEFAULT_ENV_FILE), help="Path to a config.env file.")
+    parser.add_argument("--token-file", default=str(DEFAULT_TOKEN_FILE), help="Path to the OAuth 2.0 token cache file.")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    login_parser = subparsers.add_parser("login", help="Run the OAuth 2.0 PKCE login flow and cache a user token.")
+    login_parser.add_argument(
+        "--redirect-uri",
+        help="Redirect URI registered in the X Developer Console. Defaults to X_BOOKMARKS_REDIRECT_URI.",
+    )
+    login_parser.add_argument(
+        "--scopes",
+        default=" ".join(DEFAULT_SCOPES),
+        help="Space-separated OAuth 2.0 scopes. Default: tweet.read users.read bookmark.read offline.access",
+    )
+    login_parser.add_argument("--no-browser", action="store_true", help="Do not try to open the authorization URL in a browser.")
+    login_parser.set_defaults(func=login)
+
+    fetch_parser = subparsers.add_parser("fetch", help="Fetch bookmarked posts for the authenticated user.")
+    fetch_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum number of bookmarks to return. Omit to fetch all pages.",
+    )
+    fetch_parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="Bookmarks per request (1-100). Default: 100.",
+    )
+    fetch_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
+    fetch_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
+    fetch_parser.set_defaults(func=fetch_bookmarks)
+
+    return parser
+
+
+def validate_args(args: argparse.Namespace) -> None:
+    if getattr(args, "page_size", 100) < 1 or getattr(args, "page_size", 100) > 100:
+        raise XApiError("`--page-size` must be between 1 and 100.")
+    if args.command == "fetch" and args.limit is not None and args.limit < 1:
+        raise XApiError("`--limit` must be a positive integer.")
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+
+    env_file = Path(args.env_file).expanduser().resolve()
+    token_file = Path(args.token_file).expanduser().resolve()
+
+    load_project_env(env_file)
+    settings = Settings.from_env()
+
+    try:
+        validate_args(args)
+        args.func(args, settings, token_file)
+    except (XApiError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

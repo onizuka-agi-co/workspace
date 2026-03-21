@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+config.env
+.x-user-token.json
+bookmarks.json
+output/

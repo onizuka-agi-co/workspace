@@ -1,0 +1,17 @@
+[project]
+name = "x-bookmarks-fetcher"
+version = "0.1.0"
+description = "Fetch X bookmarks with OAuth 2.0 PKCE or OAuth 1.0a"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "requests-oauthlib>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = false
