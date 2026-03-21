@@ -79,6 +79,7 @@ IDENTITY_KEYS = {
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_ENV_FILE = SCRIPT_DIR / "config.env"
 DEFAULT_TOKEN_FILE = SCRIPT_DIR / ".x-user-token.json"
+DEFAULT_MONITOR_STATE_FILE = SCRIPT_DIR / ".bookmark-monitor-state.json"
 USER_AGENT = "x-bookmarks-fetcher/0.1"
 
 
@@ -92,6 +93,7 @@ class Settings:
     client_secret: str
     redirect_uri: str
     bearer_token: str
+    discord_webhook_url: str
     user_access_token: str
     user_refresh_token: str
     api_key: str
@@ -106,6 +108,7 @@ class Settings:
             client_secret=read_env("X_CLIENT_SECRET"),
             redirect_uri=read_env("X_BOOKMARKS_REDIRECT_URI"),
             bearer_token=read_env("X_BEARER_TOKEN"),
+            discord_webhook_url=read_env("DISCORD_WEBHOOK_URL"),
             user_access_token=read_env("X_USER_ACCESS_TOKEN"),
             user_refresh_token=read_env("X_USER_REFRESH_TOKEN"),
             api_key=read_env("X_API_KEY"),
@@ -283,15 +286,18 @@ def request_x(
     else:
         raise XApiError(f"Unsupported auth mode: {auth_context.mode}")
 
-    response = requests.request(
-        method=method,
-        url=url,
-        params=params,
-        json=json_body,
-        headers=headers,
-        auth=auth,
-        timeout=30,
-    )
+    try:
+        response = requests.request(
+            method=method,
+            url=url,
+            params=params,
+            json=json_body,
+            headers=headers,
+            auth=auth,
+            timeout=30,
+        )
+    except requests.RequestException as exc:
+        raise XApiError(f"X API request could not be completed: {exc}") from exc
 
     if response.status_code == 401 and retry_on_401 and auth_context.mode == "oauth2" and auth_context.token and auth_context.token.get("refresh_token") and settings:
         refreshed = refresh_oauth2_token(settings, auth_context.token)
@@ -507,6 +513,12 @@ def write_json_result(result: dict[str, Any], args: argparse.Namespace, success_
     print(output_text)
 
 
+def truncate_text(value: str, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    return value[: max(0, limit - 1)].rstrip() + "…"
+
+
 def merge_includes(target: dict[str, list[dict[str, Any]]], page_includes: dict[str, Any] | None) -> None:
     if not page_includes:
         return
@@ -561,6 +573,89 @@ def lookup_tweets_by_ids(auth_context: AuthContext, settings: Settings, tweet_id
     return ordered, includes, last_rate_limit
 
 
+def build_user_index(includes: dict[str, list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
+    return {
+        str(user.get("id")): user
+        for user in includes.get("users", [])
+        if isinstance(user, dict) and user.get("id")
+    }
+
+
+def post_url_for_tweet_id(tweet_id: str) -> str:
+    return f"https://x.com/i/web/status/{tweet_id}"
+
+
+def build_discord_webhook_payload(
+    tweet: dict[str, Any],
+    includes: dict[str, list[dict[str, Any]]],
+    *,
+    monitor_label: str,
+) -> dict[str, Any]:
+    user_index = build_user_index(includes)
+    author = user_index.get(str(tweet.get("author_id")), {})
+    author_name = author.get("name") or "Unknown author"
+    author_username = author.get("username")
+    post_url = post_url_for_tweet_id(str(tweet["id"]))
+    tweet_text = (tweet.get("text") or "").replace("\r\n", "\n").strip()
+    short_text = truncate_text(tweet_text, 3500) or "(no text)"
+
+    embed: dict[str, Any] = {
+        "title": truncate_text(f"New X bookmark detected: {tweet.get('id')}", 256),
+        "url": post_url,
+        "description": short_text,
+        "color": 0x1D9BF0,
+        "timestamp": tweet.get("created_at"),
+        "footer": {"text": f"Bookmark monitor • {monitor_label}"},
+        "fields": [
+            {"name": "Post", "value": post_url, "inline": False},
+        ],
+    }
+
+    if author_username:
+        embed["author"] = {
+            "name": f"{author_name} (@{author_username})",
+            "url": f"https://x.com/{author_username}",
+        }
+    else:
+        embed["author"] = {"name": author_name}
+
+    urls = []
+    entities = tweet.get("entities")
+    if isinstance(entities, dict):
+        urls = entities.get("urls") or []
+    if urls and isinstance(urls[0], dict):
+        expanded_url = urls[0].get("unwound_url") or urls[0].get("expanded_url")
+        title = urls[0].get("title") or "Attached link"
+        if expanded_url:
+            embed["fields"].append(
+                {
+                    "name": "Link",
+                    "value": f"[{truncate_text(title, 100)}]({expanded_url})",
+                    "inline": False,
+                }
+            )
+        images = urls[0].get("images") or []
+        if images and isinstance(images[0], dict) and images[0].get("url"):
+            embed["image"] = {"url": images[0]["url"]}
+
+    return {
+        "content": f"🔖 New X bookmark detected in `{monitor_label}`",
+        "embeds": [embed],
+        "allowed_mentions": {"parse": []},
+    }
+
+
+def send_discord_webhook(webhook_url: str, payload: dict[str, Any]) -> None:
+    try:
+        response = requests.post(webhook_url, json=payload, timeout=30)
+    except requests.RequestException as exc:
+        raise XApiError(f"Discord webhook request could not be completed: {exc}") from exc
+    if response.status_code >= 400:
+        raise XApiError(
+            f"Discord webhook request failed ({response.status_code} {response.reason}): {response.text[:500]}"
+        )
+
+
 def get_authenticated_user(auth_context: AuthContext, settings: Settings) -> dict[str, Any]:
     payload, _ = request_x(
         auth_context,
@@ -577,11 +672,15 @@ def get_authenticated_user(auth_context: AuthContext, settings: Settings) -> dic
     return user
 
 
-def fetch_bookmark_folders(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
-    auth_context = choose_auth(settings, token_file)
-    user = get_authenticated_user(auth_context, settings)
-
-    remaining = args.limit
+def collect_bookmark_folders(
+    auth_context: AuthContext,
+    settings: Settings,
+    user: dict[str, Any],
+    *,
+    limit: int | None = None,
+    page_size: int = 100,
+) -> dict[str, Any]:
+    remaining = limit
     next_token = None
     page_count = 0
     truncated = False
@@ -589,14 +688,14 @@ def fetch_bookmark_folders(args: argparse.Namespace, settings: Settings, token_f
     last_rate_limit: dict[str, Any] = {}
 
     while True:
-        page_size = args.page_size
+        current_page_size = page_size
         if remaining is not None:
-            page_size = min(page_size, remaining)
-            if page_size <= 0:
+            current_page_size = min(current_page_size, remaining)
+            if current_page_size <= 0:
                 truncated = True
                 break
 
-        params: dict[str, Any] = {"max_results": page_size}
+        params: dict[str, Any] = {"max_results": current_page_size}
         if next_token:
             params["pagination_token"] = next_token
 
@@ -626,25 +725,24 @@ def fetch_bookmark_folders(args: argparse.Namespace, settings: Settings, token_f
         if not next_token:
             break
 
-    result = {
-        "fetched_at": now_iso(),
-        "auth_mode": auth_context.mode,
-        "auth_source": auth_context.source,
-        "user": user,
+    return {
         "count": len(folders),
         "pages_fetched": page_count,
         "truncated": truncated,
         "folders": folders,
         "rate_limit": last_rate_limit,
     }
-    write_json_result(result, args, f"{len(folders)} bookmark folders")
 
 
-def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
-    auth_context = choose_auth(settings, token_file)
-    user = get_authenticated_user(auth_context, settings)
-
-    remaining = args.limit
+def collect_bookmarks(
+    auth_context: AuthContext,
+    settings: Settings,
+    user: dict[str, Any],
+    *,
+    limit: int | None = None,
+    page_size: int = 100,
+) -> dict[str, Any]:
+    remaining = limit
     next_token = None
     page_count = 0
     truncated = False
@@ -653,15 +751,15 @@ def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Pa
     last_rate_limit: dict[str, Any] = {}
 
     while True:
-        page_size = args.page_size
+        current_page_size = page_size
         if remaining is not None:
-            page_size = min(page_size, remaining)
-            if page_size <= 0:
+            current_page_size = min(current_page_size, remaining)
+            if current_page_size <= 0:
                 truncated = True
                 break
 
         params: dict[str, Any] = {
-            "max_results": page_size,
+            "max_results": current_page_size,
             "tweet.fields": ",".join(DEFAULT_TWEET_FIELDS),
             "expansions": ",".join(DEFAULT_EXPANSIONS),
             "user.fields": ",".join(DEFAULT_USER_FIELDS),
@@ -699,11 +797,7 @@ def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Pa
         if not next_token:
             break
 
-    result = {
-        "fetched_at": now_iso(),
-        "auth_mode": auth_context.mode,
-        "auth_source": auth_context.source,
-        "user": user,
+    return {
         "count": len(bookmarks),
         "pages_fetched": page_count,
         "truncated": truncated,
@@ -711,17 +805,20 @@ def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Pa
         "includes": includes,
         "rate_limit": last_rate_limit,
     }
-    write_json_result(result, args, f"{len(bookmarks)} bookmarks")
 
 
-def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
-    auth_context = choose_auth(settings, token_file)
-    user = get_authenticated_user(auth_context, settings)
-
+def collect_bookmark_folder_ids(
+    auth_context: AuthContext,
+    settings: Settings,
+    user: dict[str, Any],
+    folder_id: str,
+    *,
+    page_size: int = 100,
+) -> dict[str, Any]:
     tweet_ids: list[str] = []
     next_token = None
     page_count = 0
-    last_folder_rate_limit: dict[str, Any] = {}
+    last_rate_limit: dict[str, Any] = {}
 
     while True:
         params: dict[str, Any] | None = None
@@ -731,7 +828,7 @@ def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_fi
         payload, response = request_x(
             auth_context,
             "GET",
-            f"/users/{user['id']}/bookmarks/folders/{args.folder_id}",
+            f"/users/{user['id']}/bookmarks/folders/{folder_id}",
             params=params,
             settings=settings,
         )
@@ -745,29 +842,166 @@ def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_fi
             if isinstance(item, dict) and item.get("id"):
                 tweet_ids.append(str(item["id"]))
 
-        last_folder_rate_limit = parse_rate_limit(response.headers)
+        last_rate_limit = parse_rate_limit(response.headers)
         next_token = payload.get("meta", {}).get("next_token")
         if not next_token:
             break
 
-    bookmarks, includes, tweet_rate_limit = lookup_tweets_by_ids(auth_context, settings, tweet_ids)
+    return {
+        "count": len(tweet_ids),
+        "pages_fetched": page_count,
+        "bookmark_ids": tweet_ids,
+        "rate_limit": last_rate_limit,
+    }
+
+
+def load_monitor_state(path: Path) -> dict[str, Any]:
+    state = load_json(path)
+    if isinstance(state, dict):
+        return state
+    return {"targets": {}}
+
+
+def save_monitor_state(path: Path, state: dict[str, Any]) -> None:
+    path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def monitor_target_key(folder_id: str | None) -> str:
+    if folder_id:
+        return f"folder:{folder_id}"
+    return "all"
+
+
+def current_bookmark_snapshot(
+    auth_context: AuthContext,
+    settings: Settings,
+    user: dict[str, Any],
+    *,
+    folder_id: str | None,
+    page_size: int,
+) -> dict[str, Any]:
+    if folder_id:
+        folder_result = collect_bookmark_folder_ids(
+            auth_context,
+            settings,
+            user,
+            folder_id,
+            page_size=page_size,
+        )
+        bookmarks, includes, tweet_lookup_rate_limit = lookup_tweets_by_ids(
+            auth_context,
+            settings,
+            folder_result["bookmark_ids"],
+        )
+        folder_result["bookmarks"] = bookmarks
+        folder_result["includes"] = includes
+        folder_result["tweet_lookup_rate_limit"] = tweet_lookup_rate_limit
+        return folder_result
+
+    return collect_bookmarks(
+        auth_context,
+        settings,
+        user,
+        page_size=page_size,
+    )
+
+
+def notify_new_bookmarks(
+    webhook_url: str,
+    *,
+    monitor_label: str,
+    new_ids: list[str],
+    bookmarks: list[dict[str, Any]],
+    includes: dict[str, list[dict[str, Any]]],
+) -> None:
+    bookmark_by_id = {
+        str(bookmark.get("id")): bookmark
+        for bookmark in bookmarks
+        if isinstance(bookmark, dict) and bookmark.get("id")
+    }
+
+    for tweet_id in reversed(new_ids):
+        bookmark = bookmark_by_id.get(tweet_id)
+        if not bookmark:
+            continue
+        payload = build_discord_webhook_payload(
+            bookmark,
+            includes,
+            monitor_label=monitor_label,
+        )
+        send_discord_webhook(webhook_url, payload)
+
+
+def fetch_bookmark_folders(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+    folders_result = collect_bookmark_folders(
+        auth_context,
+        settings,
+        user,
+        limit=args.limit,
+        page_size=args.page_size,
+    )
+
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        **folders_result,
+    }
+    write_json_result(result, args, f"{folders_result['count']} bookmark folders")
+
+
+def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+    bookmarks_result = collect_bookmarks(
+        auth_context,
+        settings,
+        user,
+        limit=args.limit,
+        page_size=args.page_size,
+    )
+
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        **bookmarks_result,
+    }
+    write_json_result(result, args, f"{bookmarks_result['count']} bookmarks")
+
+
+def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+    folder_result = collect_bookmark_folder_ids(
+        auth_context,
+        settings,
+        user,
+        args.folder_id,
+        page_size=args.page_size,
+    )
+    bookmarks, includes, tweet_rate_limit = lookup_tweets_by_ids(auth_context, settings, folder_result["bookmark_ids"])
     result = {
         "fetched_at": now_iso(),
         "auth_mode": auth_context.mode,
         "auth_source": auth_context.source,
         "user": user,
         "folder_id": args.folder_id,
-        "count": len(tweet_ids),
-        "pages_fetched": page_count,
-        "bookmark_ids": tweet_ids,
+        "count": folder_result["count"],
+        "pages_fetched": folder_result["pages_fetched"],
+        "bookmark_ids": folder_result["bookmark_ids"],
         "bookmarks": bookmarks,
         "includes": includes,
         "rate_limit": {
-            "folder_lookup": last_folder_rate_limit,
+            "folder_lookup": folder_result["rate_limit"],
             "tweet_lookup": tweet_rate_limit,
         },
     }
-    write_json_result(result, args, f"{len(tweet_ids)} folder bookmarks")
+    write_json_result(result, args, f"{folder_result['count']} folder bookmarks")
 
 
 def delete_bookmark(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
@@ -790,6 +1024,93 @@ def delete_bookmark(args: argparse.Namespace, settings: Settings, token_file: Pa
         "rate_limit": parse_rate_limit(response.headers),
     }
     write_json_result(result, args, f"bookmark deletion result for {args.tweet_id}")
+
+
+def watch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    webhook_url = args.webhook_url or settings.discord_webhook_url
+    if not webhook_url:
+        raise XApiError(
+            "Discord webhook URL is required. Set `DISCORD_WEBHOOK_URL` in config.env or pass `--webhook-url`."
+        )
+
+    state_file = Path(args.state_file).expanduser().resolve()
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+    target_key = monitor_target_key(args.folder_id)
+    monitor_label = f"folder:{args.folder_id}" if args.folder_id else "all bookmarks"
+
+    def run_once() -> None:
+        snapshot = current_bookmark_snapshot(
+            auth_context,
+            settings,
+            user,
+            folder_id=args.folder_id,
+            page_size=args.page_size,
+        )
+        current_ids = [
+            str(bookmark_id)
+            for bookmark_id in (
+                snapshot.get("bookmark_ids")
+                or [bookmark.get("id") for bookmark in snapshot.get("bookmarks", []) if isinstance(bookmark, dict)]
+            )
+            if bookmark_id
+        ]
+        state = load_monitor_state(state_file)
+        targets = state.setdefault("targets", {})
+        previous_entry = targets.get(target_key) or {}
+        previous_ids = [str(bookmark_id) for bookmark_id in previous_entry.get("ids", []) if bookmark_id]
+
+        if not previous_ids and not args.notify_existing:
+            targets[target_key] = {
+                "ids": current_ids,
+                "count": len(current_ids),
+                "updated_at": now_iso(),
+            }
+            save_monitor_state(state_file, state)
+            print(
+                f"[{datetime.now().isoformat(timespec='seconds')}] Initialized monitor snapshot for {monitor_label} with {len(current_ids)} bookmarks. No webhook sent."
+            )
+            return
+
+        previous_id_set = set(previous_ids)
+        new_ids = [bookmark_id for bookmark_id in current_ids if bookmark_id not in previous_id_set]
+
+        if new_ids:
+            notify_new_bookmarks(
+                webhook_url,
+                monitor_label=monitor_label,
+                new_ids=new_ids,
+                bookmarks=snapshot.get("bookmarks", []),
+                includes=snapshot.get("includes", {}),
+            )
+            print(
+                f"[{datetime.now().isoformat(timespec='seconds')}] Sent {len(new_ids)} webhook notification(s) for {monitor_label}."
+            )
+        else:
+            print(
+                f"[{datetime.now().isoformat(timespec='seconds')}] No new bookmarks detected for {monitor_label}. Current count: {len(current_ids)}."
+            )
+
+        targets[target_key] = {
+            "ids": current_ids,
+            "count": len(current_ids),
+            "updated_at": now_iso(),
+        }
+        save_monitor_state(state_file, state)
+
+    if args.once:
+        run_once()
+        return
+
+    while True:
+        try:
+            run_once()
+        except XApiError as exc:
+            print(
+                f"[{datetime.now().isoformat(timespec='seconds')}] Watch iteration failed for {monitor_label}: {exc}",
+                file=sys.stderr,
+            )
+        time.sleep(args.interval)
 
 
 def login(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
@@ -891,6 +1212,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     fetch_folder_parser = subparsers.add_parser("fetch-folder", help="Fetch bookmarked posts from a specific bookmark folder.")
     fetch_folder_parser.add_argument("--folder-id", required=True, help="Bookmark folder ID, for example from x.com/i/bookmarks/<folder_id>.")
+    fetch_folder_parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="Bookmarks per folder request (1-100). Default: 100.",
+    )
     fetch_folder_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
     fetch_folder_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
     fetch_folder_parser.set_defaults(func=fetch_bookmark_folder)
@@ -901,6 +1228,41 @@ def build_parser() -> argparse.ArgumentParser:
     delete_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
     delete_parser.set_defaults(func=delete_bookmark)
 
+    watch_parser = subparsers.add_parser("watch", help="Monitor bookmarks and post newly detected items to a Discord webhook.")
+    watch_parser.add_argument("--folder-id", help="Monitor only a specific bookmark folder ID. Omit to monitor all bookmarks.")
+    watch_parser.add_argument(
+        "--interval",
+        type=int,
+        default=300,
+        help="Polling interval in seconds for continuous mode. Default: 300.",
+    )
+    watch_parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="Bookmarks per X API request (1-100). Default: 100.",
+    )
+    watch_parser.add_argument(
+        "--state-file",
+        default=str(DEFAULT_MONITOR_STATE_FILE),
+        help="Path to the local bookmark monitor state file.",
+    )
+    watch_parser.add_argument(
+        "--webhook-url",
+        help="Discord webhook URL. Defaults to DISCORD_WEBHOOK_URL in config.env.",
+    )
+    watch_parser.add_argument(
+        "--notify-existing",
+        action="store_true",
+        help="On the first run, notify for already bookmarked items instead of only storing the initial snapshot.",
+    )
+    watch_parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run a single poll iteration and exit instead of looping forever.",
+    )
+    watch_parser.set_defaults(func=watch_bookmarks)
+
     return parser
 
 
@@ -909,6 +1271,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise XApiError("`--page-size` must be between 1 and 100.")
     if args.command in {"fetch", "list-folders"} and args.limit is not None and args.limit < 1:
         raise XApiError("`--limit` must be a positive integer.")
+    if getattr(args, "interval", 1) < 1:
+        raise XApiError("`--interval` must be a positive integer.")
 
 
 def main() -> int:

@@ -3,5 +3,6 @@ __pycache__/
 .venv/
 config.env
 .x-user-token.json
+.bookmark-monitor-state.json
 bookmarks.json
 output/
