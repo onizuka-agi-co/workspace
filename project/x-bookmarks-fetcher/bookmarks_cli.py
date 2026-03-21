@@ -94,6 +94,7 @@ class Settings:
     redirect_uri: str
     bearer_token: str
     discord_webhook_url: str
+    monitor_folder_id: str
     user_access_token: str
     user_refresh_token: str
     api_key: str
@@ -109,6 +110,7 @@ class Settings:
             redirect_uri=read_env("X_BOOKMARKS_REDIRECT_URI"),
             bearer_token=read_env("X_BEARER_TOKEN"),
             discord_webhook_url=read_env("DISCORD_WEBHOOK_URL"),
+            monitor_folder_id=read_env("X_BOOKMARKS_MONITOR_FOLDER_ID"),
             user_access_token=read_env("X_USER_ACCESS_TOKEN"),
             user_refresh_token=read_env("X_USER_REFRESH_TOKEN"),
             api_key=read_env("X_API_KEY"),
@@ -1036,15 +1038,16 @@ def watch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Pa
     state_file = Path(args.state_file).expanduser().resolve()
     auth_context = choose_auth(settings, token_file)
     user = get_authenticated_user(auth_context, settings)
-    target_key = monitor_target_key(args.folder_id)
-    monitor_label = f"folder:{args.folder_id}" if args.folder_id else "all bookmarks"
+    folder_id = args.folder_id or settings.monitor_folder_id or None
+    target_key = monitor_target_key(folder_id)
+    monitor_label = f"folder:{folder_id}" if folder_id else "all bookmarks"
 
     def run_once() -> None:
         snapshot = current_bookmark_snapshot(
             auth_context,
             settings,
             user,
-            folder_id=args.folder_id,
+            folder_id=folder_id,
             page_size=args.page_size,
         )
         current_ids = [
