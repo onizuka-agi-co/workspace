@@ -97,6 +97,12 @@ uv run python bookmarks_cli.py watch --interval 300
 uv run python bookmarks_cli.py watch --folder-id 2026593501866242363 --interval 300
 ```
 
+既定の監視対象フォルダを固定したい場合は `config.env` に以下を入れます。
+
+```dotenv
+X_BOOKMARKS_MONITOR_FOLDER_ID=2026593501866242363
+```
+
 初回から既存ブックマークも通知したい場合:
 
 ```bash
