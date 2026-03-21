@@ -7,6 +7,7 @@ X のブックマークを取得するための小さい Python CLI です。
 - ページネーションを辿って JSON に保存可能
 - フォルダ一覧と特定ブックマークフォルダの中身も取得可能
 - ブックマーク削除も可能
+- 監視して Discord Webhook へ通知可能
 
 ## 置き場所
 
@@ -20,6 +21,7 @@ futodama-config/.openclaw/workspace/project/x-bookmarks-fetcher
 - `config.env.example`: 設定テンプレート
 - `config.env`: ローカル設定ファイル（Git 追跡外）
 - `.x-user-token.json`: OAuth 2.0 の取得済みトークン（Git 追跡外）
+- `.bookmark-monitor-state.json`: 監視用のスナップショット state（Git 追跡外）
 
 ## セットアップ
 
@@ -82,6 +84,25 @@ uv run python bookmarks_cli.py fetch-folder --folder-id 2026593501866242363 --ou
 uv run python bookmarks_cli.py delete-bookmark --tweet-id 2026418435408986423 --output output/delete-2026418435408986423.json
 ```
 
+全ブックマーク監視:
+
+```bash
+uv run python bookmarks_cli.py watch --once
+uv run python bookmarks_cli.py watch --interval 300
+```
+
+特定フォルダだけ監視:
+
+```bash
+uv run python bookmarks_cli.py watch --folder-id 2026593501866242363 --interval 300
+```
+
+初回から既存ブックマークも通知したい場合:
+
+```bash
+uv run python bookmarks_cli.py watch --notify-existing --once
+```
+
 ## すでに OAuth 2.0 ユーザートークンがある場合
 
 `config.env` に以下を入れれば `login` を飛ばせます。
@@ -123,7 +144,11 @@ uv run python bookmarks_cli.py fetch --output bookmarks.json
 
 `list-folders` は `folders` 配列を返します。
 
+`watch` は state file に前回の bookmark ID 一覧を保存し、新規 ID だけ Discord Webhook に投稿します。
+初回実行は既定で通知せず、スナップショットだけ保存します。
+
 ## 補足
 
 - `config.env` と `.x-user-token.json` は `.gitignore` に入れてあります。
+- `DISCORD_WEBHOOK_URL` は `config.env` にだけ保存してください。
 - `X_BEARER_TOKEN` は public な読み取り用途には使えますが、ブックマーク取得には使いません。
