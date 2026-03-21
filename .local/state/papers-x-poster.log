@@ -5,3 +5,9 @@
 [2026-03-19T22:06:44.981934] Error posting: 
 [2026-03-19T22:06:45.270345] Error posting (simple): 
 [2026-03-19T22:06:45.270517] === Papers X Poster Failed: 2603.16077 ===
+[2026-03-21T09:04:19.067082] === Papers X Poster Started ===
+[2026-03-21T09:04:19.068739] Found 13 unposted papers
+[2026-03-21T09:04:19.069083] Processing: 2603.19216 - 📄 DreamPartGen: Semantically Grounded Part-Level 3...
+[2026-03-21T09:04:19.069199] Posting paper 2603.19216 to X...
+[2026-03-21T09:04:48.404771] Successfully posted: 2603.19216
+[2026-03-21T09:04:48.405125] === Papers X Poster Completed: 2603.19216 posted ===

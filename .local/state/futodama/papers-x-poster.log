@@ -1,0 +1,9 @@
+[2026-03-21T09:04:18Z] service start interval=43200 s
+[2026-03-21T09:04:18Z] posting papers to X...
+[2026-03-21T09:04:19.067082] === Papers X Poster Started ===
+[2026-03-21T09:04:19.068739] Found 13 unposted papers
+[2026-03-21T09:04:19.069083] Processing: 2603.19216 - 📄 DreamPartGen: Semantically Grounded Part-Level 3...
+[2026-03-21T09:04:19.069199] Posting paper 2603.19216 to X...
+[2026-03-21T09:04:48.404771] Successfully posted: 2603.19216
+[2026-03-21T09:04:48.405125] === Papers X Poster Completed: 2603.19216 posted ===
+[2026-03-21T09:04:48Z] sleeping for 43200 s
