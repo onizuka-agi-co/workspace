@@ -477,6 +477,36 @@ def parse_rate_limit(headers: requests.structures.CaseInsensitiveDict[str]) -> d
     }
 
 
+def chunked(items: list[str], size: int) -> list[list[str]]:
+    return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def build_tweet_lookup_params(tweet_ids: list[str]) -> dict[str, Any]:
+    return {
+        "ids": ",".join(tweet_ids),
+        "tweet.fields": ",".join(DEFAULT_TWEET_FIELDS),
+        "expansions": ",".join(DEFAULT_EXPANSIONS),
+        "user.fields": ",".join(DEFAULT_USER_FIELDS),
+        "media.fields": ",".join(DEFAULT_MEDIA_FIELDS),
+        "poll.fields": ",".join(DEFAULT_POLL_FIELDS),
+        "place.fields": ",".join(DEFAULT_PLACE_FIELDS),
+    }
+
+
+def write_json_result(result: dict[str, Any], args: argparse.Namespace, success_label: str) -> None:
+    output_text = json.dumps(result, indent=None if args.compact else 2, ensure_ascii=False)
+    if args.output:
+        output_path = Path(args.output).expanduser()
+        if not output_path.is_absolute():
+            output_path = Path.cwd() / output_path
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output_text + "\n", encoding="utf-8")
+        print(f"Saved {success_label} to {output_path}")
+        return
+
+    print(output_text)
+
+
 def merge_includes(target: dict[str, list[dict[str, Any]]], page_includes: dict[str, Any] | None) -> None:
     if not page_includes:
         return
@@ -502,6 +532,35 @@ def merge_includes(target: dict[str, list[dict[str, Any]]], page_includes: dict[
             bucket.append(item)
 
 
+def lookup_tweets_by_ids(auth_context: AuthContext, settings: Settings, tweet_ids: list[str]) -> tuple[list[dict[str, Any]], dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    if not tweet_ids:
+        return [], {}, {}
+
+    hydrated: list[dict[str, Any]] = []
+    includes: dict[str, list[dict[str, Any]]] = {}
+    last_rate_limit: dict[str, Any] = {}
+
+    for tweet_id_batch in chunked(tweet_ids, 100):
+        payload, response = request_x(
+            auth_context,
+            "GET",
+            "/tweets",
+            params=build_tweet_lookup_params(tweet_id_batch),
+            settings=settings,
+        )
+        page_items = payload.get("data") or []
+        if not isinstance(page_items, list):
+            raise XApiError("Tweet lookup response contained an unexpected `data` shape.")
+
+        hydrated.extend(page_items)
+        merge_includes(includes, payload.get("includes"))
+        last_rate_limit = parse_rate_limit(response.headers)
+
+    by_id = {str(tweet.get("id")): tweet for tweet in hydrated if isinstance(tweet, dict) and tweet.get("id")}
+    ordered = [by_id[tweet_id] for tweet_id in tweet_ids if tweet_id in by_id]
+    return ordered, includes, last_rate_limit
+
+
 def get_authenticated_user(auth_context: AuthContext, settings: Settings) -> dict[str, Any]:
     payload, _ = request_x(
         auth_context,
@@ -516,6 +575,69 @@ def get_authenticated_user(auth_context: AuthContext, settings: Settings) -> dic
     if not isinstance(user, dict):
         raise XApiError("Authenticated user response did not include `data`.")
     return user
+
+
+def fetch_bookmark_folders(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+
+    remaining = args.limit
+    next_token = None
+    page_count = 0
+    truncated = False
+    folders: list[dict[str, Any]] = []
+    last_rate_limit: dict[str, Any] = {}
+
+    while True:
+        page_size = args.page_size
+        if remaining is not None:
+            page_size = min(page_size, remaining)
+            if page_size <= 0:
+                truncated = True
+                break
+
+        params: dict[str, Any] = {"max_results": page_size}
+        if next_token:
+            params["pagination_token"] = next_token
+
+        payload, response = request_x(
+            auth_context,
+            "GET",
+            f"/users/{user['id']}/bookmarks/folders",
+            params=params,
+            settings=settings,
+        )
+        page_count += 1
+
+        page_items = payload.get("data") or []
+        if not isinstance(page_items, list):
+            raise XApiError("Bookmark folders response contained an unexpected `data` shape.")
+
+        folders.extend(page_items)
+        last_rate_limit = parse_rate_limit(response.headers)
+
+        if remaining is not None:
+            remaining -= len(page_items)
+            if remaining <= 0:
+                truncated = bool(payload.get("meta", {}).get("next_token"))
+                break
+
+        next_token = payload.get("meta", {}).get("next_token")
+        if not next_token:
+            break
+
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        "count": len(folders),
+        "pages_fetched": page_count,
+        "truncated": truncated,
+        "folders": folders,
+        "rate_limit": last_rate_limit,
+    }
+    write_json_result(result, args, f"{len(folders)} bookmark folders")
 
 
 def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
@@ -589,17 +711,63 @@ def fetch_bookmarks(args: argparse.Namespace, settings: Settings, token_file: Pa
         "includes": includes,
         "rate_limit": last_rate_limit,
     }
+    write_json_result(result, args, f"{len(bookmarks)} bookmarks")
 
-    output_text = json.dumps(result, indent=None if args.compact else 2, ensure_ascii=False)
-    if args.output:
-        output_path = Path(args.output).expanduser()
-        if not output_path.is_absolute():
-            output_path = Path.cwd() / output_path
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(output_text + "\n", encoding="utf-8")
-        print(f"Saved {len(bookmarks)} bookmarks to {output_path}")
-    else:
-        print(output_text)
+
+def fetch_bookmark_folder(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
+    auth_context = choose_auth(settings, token_file)
+    user = get_authenticated_user(auth_context, settings)
+
+    tweet_ids: list[str] = []
+    next_token = None
+    page_count = 0
+    last_folder_rate_limit: dict[str, Any] = {}
+
+    while True:
+        params: dict[str, Any] | None = None
+        if next_token:
+            params = {"pagination_token": next_token}
+
+        payload, response = request_x(
+            auth_context,
+            "GET",
+            f"/users/{user['id']}/bookmarks/folders/{args.folder_id}",
+            params=params,
+            settings=settings,
+        )
+        page_count += 1
+
+        page_items = payload.get("data") or []
+        if not isinstance(page_items, list):
+            raise XApiError("Bookmark folder response contained an unexpected `data` shape.")
+
+        for item in page_items:
+            if isinstance(item, dict) and item.get("id"):
+                tweet_ids.append(str(item["id"]))
+
+        last_folder_rate_limit = parse_rate_limit(response.headers)
+        next_token = payload.get("meta", {}).get("next_token")
+        if not next_token:
+            break
+
+    bookmarks, includes, tweet_rate_limit = lookup_tweets_by_ids(auth_context, settings, tweet_ids)
+    result = {
+        "fetched_at": now_iso(),
+        "auth_mode": auth_context.mode,
+        "auth_source": auth_context.source,
+        "user": user,
+        "folder_id": args.folder_id,
+        "count": len(tweet_ids),
+        "pages_fetched": page_count,
+        "bookmark_ids": tweet_ids,
+        "bookmarks": bookmarks,
+        "includes": includes,
+        "rate_limit": {
+            "folder_lookup": last_folder_rate_limit,
+            "tweet_lookup": tweet_rate_limit,
+        },
+    }
+    write_json_result(result, args, f"{len(tweet_ids)} folder bookmarks")
 
 
 def login(args: argparse.Namespace, settings: Settings, token_file: Path) -> None:
@@ -665,6 +833,23 @@ def build_parser() -> argparse.ArgumentParser:
     login_parser.add_argument("--no-browser", action="store_true", help="Do not try to open the authorization URL in a browser.")
     login_parser.set_defaults(func=login)
 
+    folders_parser = subparsers.add_parser("list-folders", help="List bookmark folders for the authenticated user.")
+    folders_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum number of bookmark folders to return. Omit to fetch all pages.",
+    )
+    folders_parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="Folders per request (1-100). Default: 100.",
+    )
+    folders_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
+    folders_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
+    folders_parser.set_defaults(func=fetch_bookmark_folders)
+
     fetch_parser = subparsers.add_parser("fetch", help="Fetch bookmarked posts for the authenticated user.")
     fetch_parser.add_argument(
         "--limit",
@@ -682,13 +867,19 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
     fetch_parser.set_defaults(func=fetch_bookmarks)
 
+    fetch_folder_parser = subparsers.add_parser("fetch-folder", help="Fetch bookmarked posts from a specific bookmark folder.")
+    fetch_folder_parser.add_argument("--folder-id", required=True, help="Bookmark folder ID, for example from x.com/i/bookmarks/<folder_id>.")
+    fetch_folder_parser.add_argument("--output", help="Write JSON output to a file instead of stdout.")
+    fetch_folder_parser.add_argument("--compact", action="store_true", help="Emit compact JSON instead of pretty-printed JSON.")
+    fetch_folder_parser.set_defaults(func=fetch_bookmark_folder)
+
     return parser
 
 
 def validate_args(args: argparse.Namespace) -> None:
     if getattr(args, "page_size", 100) < 1 or getattr(args, "page_size", 100) > 100:
         raise XApiError("`--page-size` must be between 1 and 100.")
-    if args.command == "fetch" and args.limit is not None and args.limit < 1:
+    if args.command in {"fetch", "list-folders"} and args.limit is not None and args.limit < 1:
         raise XApiError("`--limit` must be a positive integer.")
 
 
