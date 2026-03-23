@@ -11,3 +11,30 @@
 [2026-03-21T09:04:19.069199] Posting paper 2603.19216 to X...
 [2026-03-21T09:04:48.404771] Successfully posted: 2603.19216
 [2026-03-21T09:04:48.405125] === Papers X Poster Completed: 2603.19216 posted ===
+[2026-03-21T21:04:48.449491] === Papers X Poster Started ===
+[2026-03-21T21:04:48.450441] Found 12 unposted papers
+[2026-03-21T21:04:48.450601] Processing: 2603.10263 - 📄 From Prior to Pro: Efficient Skill Mastery via D...
+[2026-03-21T21:04:48.450660] Posting paper 2603.10263 to X...
+[2026-03-21T21:05:15.075316] Error posting: 
+[2026-03-21T21:05:15.386863] Error posting (simple): 
+[2026-03-21T21:05:15.387050] === Papers X Poster Failed: 2603.10263 ===
+[2026-03-22T09:05:15.429487] === Papers X Poster Started ===
+[2026-03-22T09:05:15.430751] Found 12 unposted papers
+[2026-03-22T09:05:15.431002] Processing: 2603.10263 - 📄 From Prior to Pro: Efficient Skill Mastery via D...
+[2026-03-22T09:05:15.431140] Posting paper 2603.10263 to X...
+[2026-03-22T09:05:39.347813] Error posting: 
+[2026-03-22T09:05:39.649288] Error posting (simple): 
+[2026-03-22T09:05:39.649500] === Papers X Poster Failed: 2603.10263 ===
+[2026-03-22T21:05:39.691583] === Papers X Poster Started ===
+[2026-03-22T21:05:39.692428] Found 14 unposted papers
+[2026-03-22T21:05:39.692551] Processing: 2603.19017 - 📄 What Really Controls Temporal Reasoning in Large...
+[2026-03-22T21:05:39.692607] Posting paper 2603.19017 to X...
+[2026-03-22T21:06:07.339484] Error posting: 
+[2026-03-22T21:06:07.650498] Error posting (simple): 
+[2026-03-22T21:06:07.650668] === Papers X Poster Failed: 2603.19017 ===
+[2026-03-23T09:06:07.690972] === Papers X Poster Started ===
+[2026-03-23T09:06:07.691908] Found 15 unposted papers
+[2026-03-23T09:06:07.692046] Processing: 2603.20105 - 📄 The Y-Combinator for LLMs: Solving Long-Context ...
+[2026-03-23T09:06:07.692105] Posting paper 2603.20105 to X...
+[2026-03-23T09:06:37.664542] Successfully posted: 2603.20105
+[2026-03-23T09:06:37.665215] === Papers X Poster Completed: 2603.20105 posted ===
