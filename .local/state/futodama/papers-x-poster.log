@@ -51,3 +51,11 @@
 [2026-03-23T21:07:06.310880] Error posting (simple): 
 [2026-03-23T21:07:06.311123] === Papers X Poster Failed: 2603.19017 ===
 [2026-03-23T21:07:06Z] sleeping for 43200 s
+[2026-03-24T09:07:06Z] posting papers to X...
+[2026-03-24T09:07:06.354516] === Papers X Poster Started ===
+[2026-03-24T09:07:06.355492] Found 16 unposted papers
+[2026-03-24T09:07:06.355626] Processing: 2603.21341 - 📄 RoboAlign: Learning Test-Time Reasoning for Lang...
+[2026-03-24T09:07:06.355675] Posting paper 2603.21341 to X...
+[2026-03-24T09:07:27.593345] Successfully posted: 2603.21341
+[2026-03-24T09:07:27.593796] === Papers X Poster Completed: 2603.21341 posted ===
+[2026-03-24T09:07:27Z] sleeping for 43200 s
