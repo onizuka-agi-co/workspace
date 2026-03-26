@@ -59,3 +59,59 @@
 [2026-03-24T09:07:27.593345] Successfully posted: 2603.21341
 [2026-03-24T09:07:27.593796] === Papers X Poster Completed: 2603.21341 posted ===
 [2026-03-24T09:07:27Z] sleeping for 43200 s
+[2026-03-24T21:07:27Z] posting papers to X...
+[2026-03-24T21:07:27.629686] === Papers X Poster Started ===
+[2026-03-24T21:07:27.630520] Found 15 unposted papers
+[2026-03-24T21:07:27.630631] Processing: 2603.20193 - 📄 From Masks to Pixels and Meaning: A New Taxonomy...
+[2026-03-24T21:07:27.630679] Posting paper 2603.20193 to X...
+[2026-03-24T21:08:02.827738] Error posting: 
+[2026-03-24T21:08:03.101269] Error posting (simple): 
+[2026-03-24T21:08:03.101444] === Papers X Poster Failed: 2603.20193 ===
+[2026-03-24T21:08:03Z] sleeping for 43200 s
+[2026-03-25T09:08:03Z] posting papers to X...
+[2026-03-25T09:08:03.136606] === Papers X Poster Started ===
+[2026-03-25T09:08:03.137420] Found 16 unposted papers
+[2026-03-25T09:08:03.137533] Processing: 2603.23495 - 📄 VISion On Request: Enhanced VLLM efficiency with...
+[2026-03-25T09:08:03.137582] Posting paper 2603.23495 to X...
+[2026-03-25T09:08:42.704211] Error posting: 
+[2026-03-25T09:08:42.983937] Error posting (simple): 
+[2026-03-25T09:08:42.984103] === Papers X Poster Failed: 2603.23495 ===
+[2026-03-25T09:08:42Z] sleeping for 43200 s
+[2026-03-25T13:18:58Z] service start interval=43200 s
+[2026-03-25T13:18:58Z] posting papers to X...
+[2026-03-25T13:18:58.542374] === Papers X Poster Started ===
+[2026-03-25T13:18:58.544049] Found 16 unposted papers
+[2026-03-25T13:18:58.544299] Processing: 2603.23495 - 📄 VISion On Request: Enhanced VLLM efficiency with...
+[2026-03-25T13:18:58.544392] Posting paper 2603.23495 to X...
+[2026-03-25T13:19:31.311188] Error posting: 
+[2026-03-25T13:19:31.623431] Error posting (simple): 
+[2026-03-25T13:19:31.623595] === Papers X Poster Failed: 2603.23495 ===
+[2026-03-25T13:19:31Z] sleeping for 43200 s
+[2026-03-26T05:49:12Z] service start interval=43200 s
+[2026-03-26T05:49:12Z] posting papers to X...
+[2026-03-26T05:49:12.345763] === Papers X Poster Started ===
+[2026-03-26T05:49:12.395865] Found 16 unposted papers
+[2026-03-26T05:49:12.399903] Processing: 2603.23495 - 📄 VISion On Request: Enhanced VLLM efficiency with...
+[2026-03-26T05:49:12.400080] Posting paper 2603.23495 to X...
+[2026-03-26T05:49:40.377310] Error posting: 
+[2026-03-26T05:49:40.659548] Error posting (simple): 
+[2026-03-26T05:49:40.659732] === Papers X Poster Failed: 2603.23495 ===
+[2026-03-26T05:49:40Z] sleeping for 43200 s
+[2026-03-26T17:49:40Z] posting papers to X...
+[2026-03-26T17:49:40.700026] === Papers X Poster Started ===
+[2026-03-26T17:49:40.700860] Found 17 unposted papers
+[2026-03-26T17:49:40.700983] Processing: 2603.23404 - 📄 Unleashing Spatial Reasoning in Multimodal Large...
+[2026-03-26T17:49:40.701033] Posting paper 2603.23404 to X...
+[2026-03-26T17:50:13.784447] Error posting: 
+[2026-03-26T17:50:14.077870] Error posting (simple): 
+[2026-03-26T17:50:14.078005] === Papers X Poster Failed: 2603.23404 ===
+[2026-03-26T17:50:14Z] sleeping for 43200 s
+[2026-03-26T19:27:57Z] service start interval=43200 s
+[2026-03-26T19:27:57Z] posting papers to X...
+[2026-03-26T19:27:57.688517] === Papers X Poster Started ===
+[2026-03-26T19:27:57.689770] Found 17 unposted papers
+[2026-03-26T19:27:57.689975] Processing: 2603.23404 - 📄 Unleashing Spatial Reasoning in Multimodal Large...
+[2026-03-26T19:27:57.690085] Posting paper 2603.23404 to X...
+[2026-03-26T19:28:23.349752] Successfully posted: 2603.23404
+[2026-03-26T19:28:23.350226] === Papers X Poster Completed: 2603.23404 posted ===
+[2026-03-26T19:28:23Z] sleeping for 43200 s
