@@ -115,3 +115,12 @@
 [2026-03-26T19:28:23.349752] Successfully posted: 2603.23404
 [2026-03-26T19:28:23.350226] === Papers X Poster Completed: 2603.23404 posted ===
 [2026-03-26T19:28:23Z] sleeping for 43200 s
+[2026-03-27T07:28:23Z] posting papers to X...
+[2026-03-27T07:28:23.392414] === Papers X Poster Started ===
+[2026-03-27T07:28:23.393980] Found 18 unposted papers
+[2026-03-27T07:28:23.394111] Processing: 2603.14375 - 📄 The Pulse of Motion: Measuring Physical Frame Ra...
+[2026-03-27T07:28:23.394174] Posting paper 2603.14375 to X...
+[2026-03-27T07:29:08.956604] Error posting: 
+[2026-03-27T07:29:09.235765] Error posting (simple): 
+[2026-03-27T07:29:09.235921] === Papers X Poster Failed: 2603.14375 ===
+[2026-03-27T07:29:09Z] sleeping for 43200 s
