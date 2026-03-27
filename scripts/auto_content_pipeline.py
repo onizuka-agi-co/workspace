@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
-Auto Content Pipeline - 自動コンテンツ生成パイプライン
+Auto Content Pipeline v2 - 自動コンテンツ生成パイプライン
 
-HuggingFace Daily Papers → nano-banana-2図解 → X/Discord投稿
+Multi-source content fetching → nano-banana-2図解 → X/Discord投稿
+Features:
+- Multi-source support (HF Papers, arXiv, etc.)
+- Content queue management
+- Engagement tracking
+- Scheduled posting
 """
 
 import argparse
@@ -18,13 +23,18 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 SKILLS_DIR = WORKSPACE_ROOT / "skills"
 DATA_DIR = WORKSPACE_ROOT / "data"
 
-# Import hf_papers module
+# Import modules
 sys.path.insert(0, str(SKILLS_DIR / "hf-papers" / "scripts"))
+sys.path.insert(0, str(WORKSPACE_ROOT / "scripts"))
+
 import hf_papers
+import content_queue
+import engagement_tracker
+import multi_source_fetcher
 
 
 def get_top_paper() -> Optional[dict]:
-    """Get top paper from HuggingFace Daily Papers."""
+    """Get top paper from HuggingFace Daily Papers (legacy, use get_top_content instead)."""
     try:
         papers = hf_papers.fetch_papers(limit=1, use_cache=False)
         if papers:
@@ -33,6 +43,49 @@ def get_top_paper() -> Optional[dict]:
         print(f"Error fetching paper: {e}")
     
     return None
+
+
+def get_top_content(sources: list = None) -> Optional[dict]:
+    """Get top content from multiple sources (v2 feature)."""
+    try:
+        fetcher = multi_source_fetcher.MultiSourceFetcher()
+        item = fetcher.get_top_item(sources=sources or ["huggingface"])
+        
+        if item:
+            # Convert to legacy format for compatibility
+            return {
+                "paper": {
+                    "id": item["id"],
+                    "title": item["title"],
+                    "ai_summary": item["summary"],
+                    "ai_keywords": item.get("keywords", []),
+                    "authors": item.get("authors", []),
+                    "published": item.get("published", ""),
+                    "upvotes": item.get("upvotes", 0)
+                },
+                "source": item["source"]
+            }
+    except Exception as e:
+        print(f"Error fetching content: {e}")
+    
+    return None
+
+
+def add_to_queue_v2(content_data: dict) -> int:
+    """Add content to queue (v2 feature)."""
+    paper = content_data.get("paper", content_data)
+    
+    return content_queue.add_to_queue(
+        source=content_data.get("source", "huggingface"),
+        content_type="paper",
+        title=paper.get("title", ""),
+        summary=paper.get("ai_summary", paper.get("summary", "")),
+        metadata={
+            "id": paper.get("id"),
+            "keywords": paper.get("ai_keywords", []),
+            "authors": paper.get("authors", [])
+        }
+    )
 
 
 def generate_image_prompt(paper_data: dict) -> str:
