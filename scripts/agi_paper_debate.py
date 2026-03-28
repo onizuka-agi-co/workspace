@@ -50,38 +50,38 @@ AGENTS = {
 
 
 def call_llm(prompt: str, system_prompt: str = "") -> str:
-    """Call LLM API (OpenClaw) to generate response."""
-    # Use OpenClaw's LLM integration
-    # This is a placeholder - actual implementation depends on OpenClaw API
+    """Call LLM API (z.ai/GLM) to generate response."""
     try:
         import requests
 
-        # Check for OpenClaw API endpoint
-        openclaw_url = os.environ.get("OPENCLAW_API_URL", "http://localhost:8080")
-        api_key = os.environ.get("OPENCLAW_API_KEY", "")
+        # Use z.ai Anthropic-compatible API
+        api_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.z.ai/api/anthropic")
+        api_key = os.environ.get("ANTHROPIC_AUTH_TOKEN", os.environ.get("ZAI_API_KEY", ""))
 
+        # Anthropic-compatible API format
         response = requests.post(
-            f"{openclaw_url}/v1/chat/completions",
+            f"{api_url}/v1/messages",
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json"
             },
             json={
-                "model": "default",
+                "model": "claude-3-5-sonnet-20241022",  # Maps to GLM-5
+                "max_tokens": 1000,
+                "system": system_prompt,
                 "messages": [
-                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000
+                ]
             },
             timeout=60
         )
 
         if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
+            result = response.json()
+            return result.get("content", [{}])[0].get("text", "[No response]")
         else:
-            print(f"LLM API error: {response.status_code}")
+            print(f"LLM API error: {response.status_code} - {response.text[:200]}")
             return f"[LLM Error: {response.status_code}]"
 
     except Exception as e:
