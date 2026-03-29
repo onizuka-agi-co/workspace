@@ -142,3 +142,21 @@
 [2026-03-28T07:30:18.774679] Error posting (simple): 
 [2026-03-28T07:30:18.774839] === Papers X Poster Failed: 2603.24836 ===
 [2026-03-28T07:30:18Z] sleeping for 43200 s
+[2026-03-28T19:30:18Z] posting papers to X...
+[2026-03-28T19:30:18.810288] === Papers X Poster Started ===
+[2026-03-28T19:30:18.811119] Found 20 unposted papers
+[2026-03-28T19:30:18.811231] Processing: 2603.24836 - 📄 WAFT-Stereo: Warping-Alone Field Transforms for ...
+[2026-03-28T19:30:18.811276] Posting paper 2603.24836 to X...
+[2026-03-28T19:30:44.693683] Error posting: 
+[2026-03-28T19:30:44.965889] Error posting (simple): 
+[2026-03-28T19:30:44.966044] === Papers X Poster Failed: 2603.24836 ===
+[2026-03-28T19:30:44Z] sleeping for 43200 s
+[2026-03-29T07:30:44Z] posting papers to X...
+[2026-03-29T07:30:45.003501] === Papers X Poster Started ===
+[2026-03-29T07:30:45.004604] Found 20 unposted papers
+[2026-03-29T07:30:45.004770] Processing: 2603.24836 - 📄 WAFT-Stereo: Warping-Alone Field Transforms for ...
+[2026-03-29T07:30:45.004827] Posting paper 2603.24836 to X...
+[2026-03-29T07:31:08.878322] Error posting: 
+[2026-03-29T07:31:09.150439] Error posting (simple): 
+[2026-03-29T07:31:09.150602] === Papers X Poster Failed: 2603.24836 ===
+[2026-03-29T07:31:09Z] sleeping for 43200 s
