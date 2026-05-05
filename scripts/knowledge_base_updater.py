@@ -15,7 +15,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 import json
-import requests
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 # パス設定
 WORKSPACE = Path("/config/.openclaw/workspace")
@@ -209,11 +210,16 @@ def send_discord_notification(reports_count: int, papers_count: int, total_repor
     }
     
     try:
-        response = requests.post(webhook_url, json=payload, timeout=10)
-        if response.status_code == 204:
-            print("  Discord通知: 送信完了")
-        else:
-            print(f"  Discord通知: エラー ({response.status_code})")
+        req = Request(
+            webhook_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "User-Agent": "KnowledgeBaseUpdater/1.0"},
+        )
+        with urlopen(req, timeout=10) as resp:
+            if resp.status in (200, 204):
+                print("  Discord通知: 送信完了")
+            else:
+                print(f"  Discord通知: エラー ({resp.status})")
     except Exception as e:
         print(f"  Discord通知: エラー ({e})")
 
