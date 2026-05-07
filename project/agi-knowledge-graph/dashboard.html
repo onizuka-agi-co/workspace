@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGI Research Impact Dashboard | ONIZUKA AGI Co.</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+       background: #0d1117; color: #e6edf3; padding: 2rem; }
+h1 { color: #C41E3A; font-size: 1.8rem; margin-bottom: 0.3rem; }
+.subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 0.9rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+         gap: 1rem; margin-bottom: 2rem; }
+.card { background: #161b22; border: 1px solid #30363d;
+         border-radius: 8px; padding: 1.2rem; }
+.card .label { color: #8b949e; font-size: 0.75rem; text-transform: uppercase;
+               letter-spacing: 0.05em; }
+.card .value { font-size: 2rem; font-weight: 700; margin-top: 0.3rem; }
+.card .value.red { color: #C41E3A; }
+.card .value.green { color: #4CAF50; }
+.card .value.blue { color: #2196F3; }
+.card .value.gold { color: #FFD700; }
+h2 { color: #e6edf3; font-size: 1.2rem; margin: 1.5rem 0 0.8rem;
+      border-left: 3px solid #C41E3A; padding-left: 0.6rem; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+th { text-align: left; color: #8b949e; font-size: 0.75rem; text-transform: uppercase;
+     padding: 0.5rem 0.6rem; border-bottom: 1px solid #30363d; }
+td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #30363d; font-size: 0.9rem; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.rank { color: #FFD700; font-weight: 700; text-align: center; width: 2rem; }
+.muted { color: #8b949e; font-size: 0.8rem; }
+.paper-link { color: #2196F3; text-decoration: none; }
+.paper-link:hover { text-decoration: underline; }
+.tag { background: #30363d; color: #8b949e; padding: 0.1rem 0.4rem;
+        border-radius: 4px; font-size: 0.7rem; display: inline-block; margin: 0.1rem; }
+.bar-row { display: flex; align-items: center; margin: 0.3rem 0; }
+.bar-label { width: 120px; font-size: 0.8rem; text-align: right; padding-right: 0.6rem;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; background: #30363d; border-radius: 3px; height: 18px; }
+.bar-fill { background: linear-gradient(90deg, #C41E3A, #FFD700); height: 100%;
+             border-radius: 3px; }
+.bar-num { width: 30px; text-align: right; font-size: 0.8rem; margin-left: 0.4rem;
+            color: #8b949e; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 768px) { .cols { grid-template-columns: 1fr; } }
+footer { color: #8b949e; font-size: 0.75rem; margin-top: 2rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>🎋 AGI Research Impact Dashboard</h1>
+<p class="subtitle">ONIZUKA AGI Co. — Democratizing AGI Knowledge<br>
+Generated: 2026-05-07T10:04:28.142363Z</p>
+
+<div class="grid">
+  <div class="card">
+    <div class="label">Total Papers</div>
+    <div class="value red">50</div>
+  </div>
+  <div class="card">
+    <div class="label">Total Citations</div>
+    <div class="value blue">731</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Citations</div>
+    <div class="value green">14.6</div>
+  </div>
+  <div class="card">
+    <div class="label">Max Citations</div>
+    <div class="value gold">116</div>
+  </div>
+  <div class="card">
+    <div class="label">With GitHub Repo</div>
+    <div class="value blue">27</div>
+  </div>
+</div>
+
+<h2>🏆 Top Cited Papers</h2>
+<div class="card" style="overflow-x:auto">
+<table>
+<tr><th>#</th><th>Title</th><th>Citations</th><th>Date</th></tr>
+
+        <tr>
+            <td class="rank">1</td>
+            <td><a href="https://arxiv.org/abs/2604.27660" target="_blank" class="paper-link">From Context to Skills: Can Language Models Learn from Context Skillfully?</a><br>
+                <span class="muted">Shuzheng Si, Haozhe Zhao, Yu Lei et al.</span><br>
+                <span class="tag">context learning</span> <span class="tag">language models</span> <span class="tag">skill augmentation</span>
+            </td>
+            <td class="num">116</td>
+            <td class="muted">2026-05-03</td>
+        </tr>
+        <tr>
+            <td class="rank">2</td>
+            <td><a href="https://arxiv.org/abs/2605.02881" target="_blank" class="paper-link">MolmoAct2: Action Reasoning Models for Real-world Deployment</a><br>
+                <span class="muted">Haoquan Fang, Jiafei Duan, Donovan Clay et al.</span><br>
+                <span class="tag">Vision-Language-Action models</span> <span class="tag">VLM backbone</span> <span class="tag">spatial reasoning</span>
+            </td>
+            <td class="num">115</td>
+            <td class="muted">2026-05-04</td>
+        </tr>
+        <tr>
+            <td class="rank">3</td>
+            <td><a href="https://arxiv.org/abs/2605.00658" target="_blank" class="paper-link">UniVidX: A Unified Multimodal Framework for Versatile Video Generation via Diffu</a><br>
+                <span class="muted">Houyuan Chen, Hong Li, Xianghao Kong et al.</span><br>
+                <span class="tag">video diffusion models</span> <span class="tag">multimodal graphics tasks</span> <span class="tag">conditional generation</span>
+            </td>
+            <td class="num">74</td>
+            <td class="muted">2026-05-01</td>
+        </tr>
+        <tr>
+            <td class="rank">4</td>
+            <td><a href="https://arxiv.org/abs/2604.27711" target="_blank" class="paper-link">ExoActor: Exocentric Video Generation as Generalizable Interactive Humanoid Cont</a><br>
+                <span class="muted">Yanghao Zhou, Jingyu Ma, Yibo Peng et al.</span><br>
+                <span class="tag">video generation</span> <span class="tag">interaction dynamics</span> <span class="tag">humanoid control</span>
+            </td>
+            <td class="num">40</td>
+            <td class="muted">2026-04-30</td>
+        </tr>
+        <tr>
+            <td class="rank">5</td>
+            <td><a href="https://arxiv.org/abs/2604.27085" target="_blank" class="paper-link">Efficient Training on Multiple Consumer GPUs with RoundPipe</a><br>
+                <span class="muted">Yibin Luo, Shiwei Gao, Huichuan Zheng et al.</span><br>
+                <span class="tag">pipeline parallelism</span> <span class="tag">CPU offloading</span> <span class="tag">weight binding issue</span>
+            </td>
+            <td class="num">36</td>
+            <td class="muted">2026-04-29</td>
+        </tr>
+        <tr>
+            <td class="rank">6</td>
+            <td><a href="https://arxiv.org/abs/2604.28139" target="_blank" class="paper-link">Claw-Eval-Live: A Live Agent Benchmark for Evolving Real-World Workflows</a><br>
+                <span class="muted">Chenxin Li, Zhengyang Tang, Huangxin Lin et al.</span><br>
+                <span class="tag">workflow agents</span> <span class="tag">live benchmark</span> <span class="tag">execution traces</span>
+            </td>
+            <td class="num">33</td>
+            <td class="muted">2026-04-30</td>
+        </tr>
+        <tr>
+            <td class="rank">7</td>
+            <td><a href="https://arxiv.org/abs/2604.27221" target="_blank" class="paper-link">Web2BigTable: A Bi-Level Multi-Agent LLM System for Internet-Scale Information S</a><br>
+                <span class="muted">Yuxuan Huang, Yihang Chen, Zhiyuan He et al.</span><br>
+                <span class="tag">multi-agent framework</span> <span class="tag">bi-level architecture</span> <span class="tag">task decomposition</span>
+            </td>
+            <td class="num">31</td>
+            <td class="muted">2026-04-29</td>
+        </tr>
+        <tr>
+            <td class="rank">8</td>
+            <td><a href="https://arxiv.org/abs/2604.27505" target="_blank" class="paper-link">Leveraging Verifier-Based Reinforcement Learning in Image Editing</a><br>
+                <span class="muted">Hanzhong Guo, Jie Wu, Jie Liu et al.</span><br>
+                <span class="tag">Reinforcement Learning from Human Feedback</span> <span class="tag">image editing</span> <span class="tag">reward model</span>
+            </td>
+            <td class="num">30</td>
+            <td class="muted">2026-04-30</td>
+        </tr>
+        <tr>
+            <td class="rank">9</td>
+            <td><a href="https://arxiv.org/abs/2605.00781" target="_blank" class="paper-link">Map2World: Segment Map Conditioned Text to 3D World Generation</a><br>
+                <span class="muted">Jaeyoung Chung, Suyoung Lee, Jianfeng Xiang et al.</span><br>
+                <span class="tag">3D world generation</span> <span class="tag">segment maps</span> <span class="tag">scale consistency</span>
+            </td>
+            <td class="num">21</td>
+            <td class="muted">2026-05-01</td>
+        </tr>
+        <tr>
+            <td class="rank">10</td>
+            <td><a href="https://arxiv.org/abs/2604.27039" target="_blank" class="paper-link">Length Value Model: Scalable Value Pretraining for Token-Level Length Modeling</a><br>
+                <span class="muted">Zhen Zhang, Changyi Yang, Zijie Xia et al.</span><br>
+                <span class="tag">Length Value Model</span> <span class="tag">token-level framework</span> <span class="tag">autoregressive models</span>
+            </td>
+            <td class="num">21</td>
+            <td class="muted">2026-04-29</td>
+        </tr>
+</table>
+</div>
+
+<div class="cols">
+<div>
+<h2>👤 Top Authors (Papers)</h2>
+<div class="card">
+<table>
+<tr><th>Author</th><th>Papers</th></tr>
+
+        <tr>
+            <td>Yi Wang</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Yang Liu</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Lei Li</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Shaokun Zhang</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Alexandre Milesi</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Katherine Cheung</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Jeffrey Glick</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Radha Sri-Tharan</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>Qing Miao</td>
+            <td class="num">2</td>
+        </tr>
+        <tr>
+            <td>George Zelenfroynd</td>
+            <td class="num">2</td>
+        </tr>
+</table>
+</div>
+
+<h2>🔥 Top Authors (Citations)</h2>
+<div class="card">
+<table>
+<tr><th>Author</th><th>Citations</th></tr>
+
+        <tr>
+            <td>Shuzheng Si</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Haozhe Zhao</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Yu Lei</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Qingyi Wang</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Dingwei Chen</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Zhitong Wang</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Zhenhailong Wang</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Kangyang Luo</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Zheng Wang</td>
+            <td class="num">116</td>
+        </tr>
+        <tr>
+            <td>Gang Chen</td>
+            <td class="num">116</td>
+        </tr>
+</table>
+</div>
+</div>
+
+<div>
+<h2>🏷️ Topic Distribution</h2>
+<div class="card">
+
+        <div class="bar-row">
+            <span class="bar-label">reinforcement learning</span>
+            <div class="bar-track"><div class="bar-fill" style="width:100.0%"></div></div>
+            <span class="bar-num">5</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">retrieval-augmented generation</span>
+            <div class="bar-track"><div class="bar-fill" style="width:60.0%"></div></div>
+            <span class="bar-num">3</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">Large Vision-Language Models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">autoregressive models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">token budget</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">code generation</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">LLM agents</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">task decomposition</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">language models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">Large Language Models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">vision-language model</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">diffusion models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">generative models</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">video generation</span>
+            <div class="bar-track"><div class="bar-fill" style="width:40.0%"></div></div>
+            <span class="bar-num">2</span>
+        </div>
+        <div class="bar-row">
+            <span class="bar-label">multimodal dataset</span>
+            <div class="bar-track"><div class="bar-fill" style="width:20.0%"></div></div>
+            <span class="bar-num">1</span>
+        </div>
+</div>
+
+<h2>🏢 Top Organizations</h2>
+<div class="card">
+<table>
+<tr><th>Organization</th><th>Papers</th></tr>
+<tr><td>ByteDance Seed</td><td class="num">2</td></tr><tr><td>University of Bologna</td><td class="num">1</td></tr><tr><td>Boldt</td><td class="num">1</td></tr><tr><td>Ai2</td><td class="num">1</td></tr><tr><td>Zhejiang University</td><td class="num">1</td></tr><tr><td>Stanford University</td><td class="num">1</td></tr><tr><td>University of Hong Kong</td><td class="num">1</td></tr><tr><td>Princeton University</td><td class="num">1</td></tr><tr><td>Merck &amp; Co., Inc.</td><td class="num">1</td></tr><tr><td>Technical University of Munich</td><td class="num">1</td></tr>
+</table>
+</div>
+</div>
+</div>
+
+<h2>📅 Publication Timeline</h2>
+<div class="card">
+<table>
+<tr><th>Month</th><th>Papers</th></tr>
+<tr><td>2026-04</td><td class="num">26</td></tr><tr><td>2026-05</td><td class="num">24</td></tr>
+</table>
+</div>
+
+<footer>
+🎋 ONIZUKA AGI Co. — <a href="https://github.com/onizuka-agi-co" style="color:#2196F3">GitHub</a>
+</footer>
+
+</body>
+</html>
