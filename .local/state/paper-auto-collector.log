@@ -1,0 +1,15 @@
+[2026-05-06T10:03:51.476123] === Paper Auto Collector started (source=hf, limit=2) ===
+[2026-05-06T10:03:51.476363] Collecting from HuggingFace (limit=2)...
+[2026-05-06T10:03:51.559617] No output from HF script
+[2026-05-06T10:03:51.560550] Saved 0 new papers (huggingface) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json
+[2026-05-06T10:03:51.560670] === Done: 0 new papers collected ===
+[2026-05-06T10:04:22.339780] === Paper Auto Collector started (source=hf, limit=3) ===
+[2026-05-06T10:04:22.339956] Collecting from HuggingFace (limit=3)...
+[2026-05-06T10:04:22.518058] HF: fetched 0 papers
+[2026-05-06T10:04:22.518610] Saved 0 new papers (huggingface) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json
+[2026-05-06T10:04:22.518691] === Done: 0 new papers collected ===
+[2026-05-06T10:04:43.346396] === Paper Auto Collector started (source=hf, limit=3) ===
+[2026-05-06T10:04:43.346608] Collecting from HuggingFace (limit=3)...
+[2026-05-06T10:04:43.568017] HF: fetched 3 papers
+[2026-05-06T10:04:43.569061] Saved 3 new papers (huggingface) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json
+[2026-05-06T10:04:43.569248] === Done: 3 new papers collected ===

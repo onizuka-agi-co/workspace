@@ -165,3 +165,44 @@ hf_papers.py: error: unrecognized arguments: --json
 [2026-05-04T13:06:29.693567] Generating explanation for 2603.27538...
 [2026-05-04T13:06:37.837632] Generated explanation for 2603.27538
 [2026-05-04T13:06:37.837799] === Papers Collector Completed: 3/3 papers processed ===
+[2026-05-05T13:06:37.879883] === Papers Collector Started ===
+[2026-05-05T13:06:37.880142] Fetching top 3 papers from HuggingFace...
+[2026-05-05T13:06:38.427552] Fetched 3 papers: ['2604.27660', '2605.00658', '2605.02881']
+[2026-05-05T13:06:38.427740] Generating explanation for 2604.27660...
+[2026-05-05T13:06:39.092774] Generated explanation for 2604.27660
+[2026-05-05T13:06:39.093043] Generating explanation for 2605.00658...
+[2026-05-05T13:06:39.824527] Generated explanation for 2605.00658
+[2026-05-05T13:06:39.824686] Generating explanation for 2605.02881...
+[2026-05-05T13:06:40.570072] Generated explanation for 2605.02881
+[2026-05-05T13:06:40.570310] === Papers Collector Completed: 3/3 papers processed ===
+[2026-05-06T06:02:56.453099] === Papers Collector Started ===
+[2026-05-06T06:02:56.453296] Fetching top 5 papers from HuggingFace...
+[2026-05-06T06:02:57.196508] HF: fetched 5 papers: ['2605.02881', '2604.27660', '2605.00658', '2604.27221', '2605.00781']
+[2026-05-06T06:02:57.196684] Fetching 10 papers from arXiv...
+[2026-05-06T06:02:57.379444] arXiv fetch error: Traceback (most recent call last):
+  File "/config/.openclaw/workspace/skills/hf-papers/scripts/arxiv_papers.py", line 176, in <module>
+    main()
+  File "/config/.openclaw/workspace/skills/hf-papers/
+[2026-05-06T06:02:57.380024] Saved 5 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json (total: 5)
+[2026-05-06T06:02:57.380113] === Papers Collector Completed: 5 new, 5 total ===
+[2026-05-06T13:06:40.625480] === Papers Collector Started ===
+[2026-05-06T13:06:40.625709] Fetching top 5 papers from HuggingFace...
+[2026-05-06T13:06:41.209548] HF: fetched 5 papers: ['2605.02881', '2604.27660', '2605.03042', '2604.28123', '2605.04036']
+[2026-05-06T13:06:41.209720] Fetching 10 papers from arXiv...
+[2026-05-06T13:06:41.648738] arXiv: fetched 10 papers
+[2026-05-06T13:06:41.650442] Saved 13 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json (total: 21)
+[2026-05-06T13:06:41.650563] === Papers Collector Completed: 13 new, 15 total ===
+[2026-05-07T13:06:41.826790] === Papers Collector Started ===
+[2026-05-07T13:06:41.828290] Fetching top 5 papers from HuggingFace...
+[2026-05-07T13:06:42.904626] HF: fetched 5 papers: ['2605.03849', '2605.04461', '2605.03042', '2605.05185', '2605.03269']
+[2026-05-07T13:06:42.904852] Fetching 10 papers from arXiv...
+[2026-05-07T13:06:43.517773] arXiv: fetched 10 papers
+[2026-05-07T13:06:43.522421] Saved 15 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-07.json (total: 15)
+[2026-05-07T13:06:43.522527] === Papers Collector Completed: 15 new, 15 total ===
+[2026-05-08T05:17:25.148174] === Papers Collector Started ===
+[2026-05-08T05:17:25.149223] Fetching top 5 papers from HuggingFace...
+[2026-05-08T05:17:25.996972] HF: fetched 5 papers: ['2605.03849', '2605.04461', '2605.03269', '2605.05185', '2604.28196']
+[2026-05-08T05:17:25.997217] Fetching 10 papers from arXiv...
+[2026-05-08T05:17:26.719438] arXiv: fetched 10 papers
+[2026-05-08T05:17:26.721415] Saved 15 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-08.json (total: 15)
+[2026-05-08T05:17:26.721539] === Papers Collector Completed: 15 new, 15 total ===
