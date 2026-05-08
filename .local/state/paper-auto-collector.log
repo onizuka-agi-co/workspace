@@ -13,3 +13,12 @@
 [2026-05-06T10:04:43.568017] HF: fetched 3 papers
 [2026-05-06T10:04:43.569061] Saved 3 new papers (huggingface) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-06.json
 [2026-05-06T10:04:43.569248] === Done: 3 new papers collected ===
+[2026-05-08T07:07:25.069079] === Paper Auto Collector started (source=all, limit=5) ===
+[2026-05-08T07:07:25.069195] Collecting from HuggingFace (limit=5)...
+[2026-05-08T07:07:25.209391] HF: fetched 5 papers
+[2026-05-08T07:07:25.210263] Saved 5 new papers (huggingface) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-08.json
+[2026-05-08T07:07:25.210340] Collecting from arXiv (limit=5)...
+[2026-05-08T07:07:25.268669] No output from arXiv script
+[2026-05-08T07:07:25.269716] Saved 0 new papers (arxiv) → /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-08.json
+[2026-05-08T07:07:25.711851] Discord notification sent (5 papers)
+[2026-05-08T07:07:25.712013] === Done: 5 new papers collected ===
