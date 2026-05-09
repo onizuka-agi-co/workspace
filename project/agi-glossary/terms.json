@@ -1,0 +1,302 @@
+[
+  {
+    "term": "AGI (Artificial General Intelligence)",
+    "reading": "汎用人工知能",
+    "category": "core",
+    "description": "人間と同等以上の知能を持ち、あらゆる知的タスクをこなせるAIシステム"
+  },
+  {
+    "term": "LLM (Large Language Model)",
+    "reading": "大規模言語モデル",
+    "category": "model",
+    "description": "大量のテキストデータで訓練され、言語の理解・生成を行うAIモデル"
+  },
+  {
+    "term": "Transformer",
+    "reading": "トランスフォーマー",
+    "category": "architecture",
+    "description": "Attention機構を中心としたニューラルネットワークアーキテクチャ。現代のLLMの基盤"
+  },
+  {
+    "term": "RLHF (Reinforcement Learning from Human Feedback)",
+    "reading": "人間のフィードバックからの強化学習",
+    "category": "training",
+    "description": "人間の評価を報酬信号として用い、モデルの出力を人間の好みに合わせる訓練手法"
+  },
+  {
+    "term": "Chain-of-Thought",
+    "reading": "思考の連鎖",
+    "category": "technique",
+    "description": "LLMに段階的な推論過程を出力させることで、複雑な問題の正答率を向上させる手法"
+  },
+  {
+    "term": "Emergent Abilities",
+    "reading": "創発能力",
+    "category": "phenomenon",
+    "description": "モデル規模が大きくなると突然現れる、小規模モデルでは見られなかった能力"
+  },
+  {
+    "term": "Scaling Laws",
+    "reading": "スケーリング則",
+    "category": "theory",
+    "description": "モデルのパラメータ数、データ量、計算資源と性能の間に成り立つ経験的なべき乗関係"
+  },
+  {
+    "term": "Fine-tuning",
+    "reading": "ファインチューニング",
+    "category": "training",
+    "description": "事前学習済みモデルを特定のタスクに合わせて追加学習させる手法"
+  },
+  {
+    "term": "RAG (Retrieval-Augmented Generation)",
+    "reading": "検索拡張生成",
+    "category": "technique",
+    "description": "外部知識ベースから関連情報を検索し、LLMの生成に活用する手法"
+  },
+  {
+    "term": "Embedding",
+    "reading": "埋め込み",
+    "category": "technique",
+    "description": "テキストや画像などのデータを数値ベクトルに変換し、意味的な類似性を計算可能にする手法"
+  },
+  {
+    "term": "Tokenization",
+    "reading": "トークン化",
+    "category": "technique",
+    "description": "テキストをLLMが処理可能な単位（トークン）に分割する処理"
+  },
+  {
+    "term": "In-context Learning",
+    "reading": "文脈内学習",
+    "category": "technique",
+    "description": "プロンプト内に例を提示するだけで、パラメータ更新なしに新しいタスクに適応する能力"
+  },
+  {
+    "term": "Prompt Engineering",
+    "reading": "プロンプトエンジニアリング",
+    "category": "technique",
+    "description": "LLMから望ましい出力を得るためのプロンプトの設計・最適化技術"
+  },
+  {
+    "term": "Multi-modal",
+    "reading": "マルチモーダル",
+    "category": "concept",
+    "description": "テキスト、画像、音声など複数の形式のデータを統合的に扱えるAIの能力"
+  },
+  {
+    "term": "Attention Mechanism",
+    "reading": "アテンション機構",
+    "category": "architecture",
+    "description": "入力データのどの部分に注目すべきかを学習により決定する仕組み。Transformerの中核"
+  },
+  {
+    "term": "Hallucination",
+    "reading": "ハルシネーション",
+    "category": "phenomenon",
+    "description": "LLMがもっともらしいが事実と異なる情報を自信を持って生成する現象"
+  },
+  {
+    "term": "Alignment",
+    "reading": "アライメント",
+    "category": "safety",
+    "description": "AIシステムの振る舞いを人間の意図や価値観に一致させるための研究・手法"
+  },
+  {
+    "term": "Tool Use / Function Calling",
+    "reading": "ツール利用",
+    "category": "technique",
+    "description": "LLMが外部ツールやAPIを呼び出して、自身の能力を拡張する仕組み"
+  },
+  {
+    "term": "Agent",
+    "reading": "エージェント",
+    "category": "concept",
+    "description": "目標を自律的に達成するために計画・実行・観察を繰り返すAIシステム"
+  },
+  {
+    "term": "World Model",
+    "reading": "世界モデル",
+    "category": "concept",
+    "description": "環境の動的な変化を予測・理解するAIの内部表現。高度な計画立案に不可欠"
+  },
+  {
+    "term": "Reasoning",
+    "reading": "推論",
+    "category": "capability",
+    "description": "与えられた情報から論理的に結論を導き出すAIの能力"
+  },
+  {
+    "term": "Planning",
+    "reading": "計画立案",
+    "category": "capability",
+    "description": "目標達成のために一連の行動を設計し順序付ける能力"
+  },
+  {
+    "term": "Memory (in AI agents)",
+    "reading": "メモリー",
+    "category": "architecture",
+    "description": "AIエージェントが過去の経験や文脈を保持・活用する仕組み"
+  },
+  {
+    "term": "ReAct",
+    "reading": "リアクト",
+    "category": "technique",
+    "description": "ReasoningとActingを交互に繰り返すエージェントの行動パターン"
+  },
+  {
+    "term": "MCP (Model Context Protocol)",
+    "reading": "モデルコンテキストプロトコル",
+    "category": "protocol",
+    "description": "LLMが外部ツールやデータソースに標準的な方法でアクセスするためのオープン規格"
+  },
+  {
+    "term": "LoRA (Low-Rank Adaptation)",
+    "reading": "ローラ",
+    "category": "training",
+    "description": "少数の追加パラメータで大規模モデルを効率的にファインチューニングする手法"
+  },
+  {
+    "term": "Quantization",
+    "reading": "量子化",
+    "category": "technique",
+    "description": "モデルのパラメータ精度を下げてメモリ使用量と推論速度を改善する手法"
+  },
+  {
+    "term": "Distillation",
+    "reading": "蒸留",
+    "category": "training",
+    "description": "大規模モデルの知識を小規模モデルに移行し、軽量ながら高性能なモデルを作る手法"
+  },
+  {
+    "term": "Constitutional AI",
+    "reading": "コンスティチューショナルAI",
+    "category": "safety",
+    "description": "AIに原則（憲法）を与え、自身の出力を自己評価・修正させる安全性手法"
+  },
+  {
+    "term": "Reward Hacking",
+    "reading": "報酬ハッキング",
+    "category": "safety",
+    "description": "AIが報酬を最大化するために意図しない方法で評価基準を悪用する現象"
+  },
+  {
+    "term": "Interpretability",
+    "reading": "解釈可能性",
+    "category": "research",
+    "description": "AIモデルの内部で何が起きているかを人間が理解できるようにする研究分野"
+  },
+  {
+    "term": "Mechanistic Interpretability",
+    "reading": "機械論的解釈可能性",
+    "category": "research",
+    "description": "ニューラルネットの個々の回路や特徴がどのように機能するかを逆工学する研究"
+  },
+  {
+    "term": "Sparse Autoencoder",
+    "reading": "スパースオートエンコーダー",
+    "category": "technique",
+    "description": "少数のニューロンだけを活性化させ、解釈可能な特徴を抽出する手法"
+  },
+  {
+    "term": "Compute-Optimal Training",
+    "reading": "計算最適訓練",
+    "category": "training",
+    "description": "与えられた計算予算で最大性能を達成するための最適なモデルサイズとデータ量の組み合わせ"
+  },
+  {
+    "term": "Mixture of Experts (MoE)",
+    "reading": "専門家の混合",
+    "category": "architecture",
+    "description": "入力に応じて多数の専門家ネットワークから一部だけを選択的に活性化するアーキテクチャ"
+  },
+  {
+    "term": "Diffusion Model",
+    "reading": "拡散モデル",
+    "category": "architecture",
+    "description": "ノイズから徐々に構造を取り戻すことで画像や音声を生成するモデル"
+  },
+  {
+    "term": "Autoregressive Model",
+    "reading": "自己回帰モデル",
+    "category": "architecture",
+    "description": "過去の出力を条件として次の要素を順次生成するモデル。GPTシリーズの基本構造"
+  },
+  {
+    "term": "Self-Play",
+    "reading": "自己対戦",
+    "category": "training",
+    "description": "AIが自身または自身のコピーと対戦することで戦略を学習する手法"
+  },
+  {
+    "term": "Test-Time Compute",
+    "reading": "テスト時計算",
+    "category": "technique",
+    "description": "推論時に追加の計算を行い、思考を深めることで回答品質を向上させる手法"
+  },
+  {
+    "term": "Tree of Thoughts",
+    "reading": "思考の木",
+    "category": "technique",
+    "description": "複数の推論パスを木構造で探索し、最適な解決策を見つける手法"
+  },
+  {
+    "term": "Curriculum Learning",
+    "reading": "カリキュラム学習",
+    "category": "training",
+    "description": "易しい問題から順に難しい問題へと段階的に学習を進める手法"
+  },
+  {
+    "term": "Speculative Decoding",
+    "reading": "投機的デコーディング",
+    "category": "technique",
+    "description": "小規模モデルで候補を生成し、大規模モデルで検証することで高速化する手法"
+  },
+  {
+    "term": "Knowledge Distillation",
+    "reading": "知識蒸留",
+    "category": "training",
+    "description": "大型モデル（教師）の出力を小型モデル（生徒）に学習させる圧縮手法"
+  },
+  {
+    "term": "Zero-shot",
+    "reading": "ゼロショット",
+    "category": "capability",
+    "description": "事例なしで新しいタスクに直接取り組む能力"
+  },
+  {
+    "term": "Few-shot",
+    "reading": "フューショット",
+    "category": "capability",
+    "description": "少数の事例を提示するだけで新しいタスクに適応する能力"
+  },
+  {
+    "term": "Grounding",
+    "reading": "グラウンディング",
+    "category": "concept",
+    "description": "AIの言葉や概念を現実世界の対象や経験に結びつけること"
+  },
+  {
+    "term": "Sim-to-Real",
+    "reading": "シミュレーションから現実へ",
+    "category": "technique",
+    "description": "シミュレーション環境で学習した知識を現実世界に移行する技術"
+  },
+  {
+    "term": "Recursive Self-Improvement",
+    "reading": "再帰的自己改善",
+    "category": "concept",
+    "description": "AIが自身の能力を改善するコードや手法を自ら開発する概念。AGIの核心的特徴の一つ"
+  },
+  {
+    "term": "Instrumental Convergence",
+    "reading": "手段的収束",
+    "category": "safety",
+    "description": "どんな目標を持つAIでも、目標達成に有用な手段（自己保存、リソース獲得等）に収束する仮説"
+  },
+  {
+    "term": "Orthogonality Thesis",
+    "reading": "直交性テーゼ",
+    "category": "safety",
+    "description": "知能レベルと最終目標は独立であり、どのような目標を持つ超知能も論理的に可能という主張"
+  }
+]
