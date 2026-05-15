@@ -242,3 +242,12 @@
 [2026-05-14T13:04:25.508210] Saved 5 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-14.json (total: 5)
 [2026-05-14T13:04:25.508301] === Papers Collector Completed: 5 new, 5 total ===
 [2026-05-14T13:04:25Z] sleeping for 86400 s
+[2026-05-15T13:04:25Z] collecting papers...
+[2026-05-15T13:04:25.550272] === Papers Collector Started ===
+[2026-05-15T13:04:25.550516] Fetching top 5 papers from HuggingFace...
+[2026-05-15T13:04:25.671825] HF: fetched 5 papers: ['2605.13301', '2605.15155', '2605.14906', '2605.15128', '2605.15178']
+[2026-05-15T13:04:25.671949] Fetching 10 papers from arXiv...
+[2026-05-15T13:04:41.265910] arXiv: fetched 10 papers
+[2026-05-15T13:04:41.266976] Saved 15 new papers to /config/.openclaw/workspace/memory/docs/papers/collected-2026-05-15.json (total: 20)
+[2026-05-15T13:04:41.267039] === Papers Collector Completed: 15 new, 15 total ===
+[2026-05-15T13:04:41Z] sleeping for 86400 s

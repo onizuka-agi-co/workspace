@@ -342,3 +342,12 @@
 [2026-05-15T01:05:05.807160] Error posting (simple): 
 [2026-05-15T01:05:05.807299] === Papers X Poster Failed: 2605.08557 ===
 [2026-05-15T01:05:05Z] sleeping for 43200 s
+[2026-05-15T13:05:05Z] posting papers to X...
+[2026-05-15T13:05:05.843209] === Papers X Poster Started ===
+[2026-05-15T13:05:05.844392] Found 50 unposted papers
+[2026-05-15T13:05:05.844572] Processing: 2605.14438 - 📄 BEAM: Binary Expert Activation Masking for Dynam...
+[2026-05-15T13:05:05.844618] Posting paper 2605.14438 to X...
+[2026-05-15T13:05:23.193996] Error posting: 
+[2026-05-15T13:05:23.520961] Error posting (simple): 
+[2026-05-15T13:05:23.521101] === Papers X Poster Failed: 2605.14438 ===
+[2026-05-15T13:05:23Z] sleeping for 43200 s
