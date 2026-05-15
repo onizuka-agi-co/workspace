@@ -252,3 +252,17 @@
 [2026-05-09T05:18:25.537181] Error posting: 
 [2026-05-09T05:18:26.807734] Error posting (simple): 
 [2026-05-09T05:18:26.807860] === Papers X Poster Failed: 2605.06535 ===
+[2026-05-14T13:04:23.857444] === Papers X Poster Started ===
+[2026-05-14T13:04:23.862864] Found 43 unposted papers
+[2026-05-14T13:04:23.873656] Processing: 2605.06663 - 📄 EMO: Pretraining Mixture of Experts for Emergent...
+[2026-05-14T13:04:23.873858] Posting paper 2605.06663 to X...
+[2026-05-14T13:04:41.215821] Error posting: 
+[2026-05-14T13:04:41.484769] Error posting (simple): 
+[2026-05-14T13:04:41.484902] === Papers X Poster Failed: 2605.06663 ===
+[2026-05-15T01:04:41.519913] === Papers X Poster Started ===
+[2026-05-15T01:04:41.521071] Found 44 unposted papers
+[2026-05-15T01:04:41.521194] Processing: 2605.08557 - 📄 MC-RFM: Geometry-Aware Few-Shot Adaptation via M...
+[2026-05-15T01:04:41.521244] Posting paper 2605.08557 to X...
+[2026-05-15T01:05:05.519768] Error posting: 
+[2026-05-15T01:05:05.807160] Error posting (simple): 
+[2026-05-15T01:05:05.807299] === Papers X Poster Failed: 2605.08557 ===
